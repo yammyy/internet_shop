@@ -1,0 +1,89 @@
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<link rel="stylesheet" href="css/navbar.css">
+<div id="navProfile" class="nav-profile closed-nav-profile navbar-dark">
+    <div class="container nav-profile-container">
+        <div class="row row-enter">
+            <div class="col col-10 d-flex align-items-center justify-content-start">
+                <%@include  file="forNavbar/profile.jsp" %>
+            </div>
+            <div class="col col-2 d-flex align-items-center justify-content-end">
+                <a href="javascript:void(0)" class="close-profile-btn" onclick="closeNavProfile()"><span class="fa fa-window-close" /></a>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <ul>
+                    <li>
+                        <a href="#">Каталог</a>
+                    </li>
+                    <li>
+                        <a href="#">Мои заказы</a>
+                    </li>
+                    <li>
+                        <a href="#">Корзина</a>
+                    </li>
+                    <li>
+                        <a href="#">Список желаний</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <ul>
+                    <li>
+                        <a href="#"><%@include  file="forNavbar/language.jsp" %></a>
+                        <a href="#">Языковые настройки</a>
+                    </li>
+                    <li>
+                        <a href="#"><%@include  file="forNavbar/currency.jsp" %></a>
+                        <a href="#">Настройки валюты</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="row row-exit">
+            <div class="col">
+                <a href="#"><span class="fa-sharp fa-solid fa-sign-out" /> Выйти из профиля</a>
+            </div>
+        </div>
+    </div>
+</div>
+<nav class="navbar navbar-dark fixed-top">
+    <div class="container">
+        <div class="row">
+            <div class="col-2">
+                <button class="navbar-toggler" onclick="openNavProfile()">
+                    <span class="navbar-toggler-icon" />
+                </button>
+            </div>
+            <div class="col middle-col col-9 d-flex align-items-center justify-content-end">
+                <ul>
+                    <li>
+                        <div class="dropdown">
+                            <a href="#"><%@include  file="forNavbar/language.jsp" %></a>
+                            <div class="dropdown-content">
+                                <%@include  file="forNavbar/languages.jsp" %>
+                            </div>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="dropdown">
+                            <a href="#"><%@include  file="forNavbar/currency.jsp" %></a>
+                            <div class="dropdown-content">
+                                <%@include  file="forNavbar/currencies.jsp" %>
+                            </div>
+                        </div>
+                    </li>
+                    <li><a href="#"><span class="fa-sharp fa-solid fa-star" /></a></li>
+                    <li><a href="#"><%@include  file="forNavbar/avatar.jsp" %></a></li>
+                </ul>
+            </div>
+            <div class="col-1 d-flex align-items-center ">
+                <a href="#"><span class="fa-sharp fa-solid fa-cart-shopping" /></a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<script src="js/navbar.js"></script>
