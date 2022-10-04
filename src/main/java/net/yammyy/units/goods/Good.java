@@ -24,4 +24,20 @@ public class Good
         return id;
     }
     public String getName () {return name;}
+    public String getDescription ()
+    {
+        return description;
+    }
+    public void setDescription (String _description)
+    {
+        description=_description;
+    }
+    public double getPrice ()
+    {
+        return price;
+    }
+    public void setPrice (double _price)
+    {
+        price=_price;
+    }
 }

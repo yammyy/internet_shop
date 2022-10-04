@@ -9,6 +9,7 @@ public interface GoodsFields
     public static final String GOOD_DESCRIPTION = "desc";
     public static final String GOOD_PRICE = "price";
     public static final String GOOD_DATE_WHEN_ADDED = "dt_added";
+    public static final String GOOD_ALREADY_SOLD = "sold";
     public static final String GOOD_LANGUAGE = "lng";
     public static final String GOOD_CURRENCY = "currency";
 

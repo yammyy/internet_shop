@@ -3,13 +3,12 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 
 <ul>
-        <%ArrayList<Category> std =
+        <%ArrayList<Category> categoriesList_l =
             (ArrayList<Category>)request.getAttribute("data");
-        for(Category s:std)
+        for(Category category:categoriesList_l)
         { %>
             <li>
-                <a href=""><%=s.getId()%>
-                <%=s.getName()%></a>
+                <a href=""><div visibility: hidden><%=category.getId()%></div><%=category.getName()%></a>
             </li>
      <% } %>
 

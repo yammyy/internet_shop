@@ -31,13 +31,13 @@
                 </script>
             </div>
             <div class="col-10">
-                <div id="result"></div>
+                <div class="container" id="resultGoods"></div>
                 <script>
                     // Send the data using post
                     var posting = $.post( "/v3/goods" );
                     // Put the results in a div
                     posting.done(function( data ) {
-                        $( "#result" ).empty().append( data );
+                        $( "#resultGoods" ).empty().append( data );
                     });
                 </script>
             </div>
