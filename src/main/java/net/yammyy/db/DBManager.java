@@ -76,7 +76,7 @@ public class DBManager
             sta=conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             sta.setString(1, "0");
             rs=sta.executeQuery();
-            if (rs.next())
+            while (rs.next())
             {
                 Category entity_l=new Category(rs.getInt(fID), rs.getString(fName));
                 res.add(entity_l);

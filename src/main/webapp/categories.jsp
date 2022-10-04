@@ -2,18 +2,15 @@
 <%@page import="java.util.ArrayList"%>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 
-
-<div class="container">
-    <div class="row">
+<ul>
         <%ArrayList<Category> std =
             (ArrayList<Category>)request.getAttribute("data");
         for(Category s:std)
         { %>
-            <div class="col col-xl-2 col-lg-3 col-md-4 col-sm-6">
+            <li>
                 <a href=""><%=s.getId()%>
                 <%=s.getName()%></a>
-            </div>
+            </li>
      <% } %>
 
-    </div>
-</div>
+</ul>
