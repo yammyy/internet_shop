@@ -1,8 +1,7 @@
 package net.yammyy.servlet;
 
 import net.yammyy.db.DBManager;
-import net.yammyy.units.goods.Category;
-import net.yammyy.units.users.User;
+import net.yammyy.units.goods.ChoosableParameterValue;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
@@ -26,13 +25,15 @@ public class CategoryServlet extends HttpServlet
     {
         System.out.println("Обрабатываем запрос к категориям");
         response.setContentType("text/html;charset=UTF-8");
-        try (PrintWriter out = response.getWriter())
+        try (PrintWriter ignored= response.getWriter())
         {
             System.out.println("Забираем соединение");
             DBManager dbManager_l=DBManager.getInstance();
 
             System.out.println("Забираем категории");
-            List<Category> categoriesList_l = dbManager_l.getAllCategories();
+            List<ChoosableParameterValue> categoriesList_l = dbManager_l.getAllCategories();
+            for(ChoosableParameterValue category:categoriesList_l){System.out.println(category.getValue());}
+            System.out.println("Забрали категории");
 
             request.setAttribute("data", categoriesList_l);
 

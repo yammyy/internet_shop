@@ -26,7 +26,7 @@ public interface GoodsFields
     public static final String COLOR_ID = "id";
     public static final String COLOR_NAME = "value";
 
-    public static final String PARAMETER_TYPE_TABLE = "params_type";
+    public static final String PARAMETER_TYPE_TABLE = "params_types";
     public static final String PARAMETER_TYPE_ID = "id";
     public static final String PARAMETER_TYPE_NAME = "name";
     public static final String PARAMETER_TYPE_OUTER = "from_table";

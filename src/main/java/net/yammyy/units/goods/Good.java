@@ -2,6 +2,7 @@ package net.yammyy.units.goods;
 
 import java.util.Currency;
 import java.util.List;
+import java.util.Map;
 
 public class Good
 {
@@ -10,10 +11,8 @@ public class Good
     String description;
     Currency currency;
     double price;
-    List<Brand> brands;
     List<Category> categories;
-    Color color;
-    List<Parameter> parameters;
+    List<GoodParameter> parameters;
     public Good (int _id, String _name)
     {
         id=_id;
