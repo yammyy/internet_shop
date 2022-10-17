@@ -1,5 +1,8 @@
 package net.yammyy.servlet;
 
+import net.yammyy.db.DBManager;
+import net.yammyy.units.goods.Parameter;
+import net.yammyy.units.users.Type;
 import net.yammyy.units.users.User;
 
 import javax.servlet.RequestDispatcher;
@@ -10,8 +13,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 @WebServlet (
         name = "UserServlet",
@@ -37,12 +43,24 @@ public class UserServlet extends HttpServlet
             // Adding members to the list. Here we are
             // using the parameterized constructor of
             // class "Student.java"
-            std.add(new User(1,"Roxy Willard"));
-            std.add(new User(2,"Todd Lanz"));
-            std.add(new User(3,"Varlene Lade"));
-            std.add(new User(4,"Julio Fairley"));
-            std.add(new User(5,"Helena Carlow"));
+            System.out.println("Забираем соединение");
+            DBManager dbManager_l=DBManager.getInstance();
 
+            System.out.println("Забираем пользователей");
+            Map<Integer,User> usr = dbManager_l.getUsers();
+            System.out.println("UserServlet 1");
+            Iterator it = usr.entrySet().iterator();
+            System.out.println("UserServlet 3");
+            while (it.hasNext())
+            {
+                System.out.println("UserServlet 3.1");
+                Map.Entry pair = (Map.Entry)it.next();
+                System.out.println("UserServlet 3.2");
+                std.add((User)pair.getValue());
+                System.out.println(((User)pair.getValue()).getLogin());
+            }
+
+            System.out.println("UserServlet 4");
             // Setting the attribute of the request object
             // which will be later fetched by a JSP page
             request.setAttribute("data", std);
@@ -50,7 +68,7 @@ public class UserServlet extends HttpServlet
             // Creating a RequestDispatcher object to dispatch
             // the request the request to another resource
             RequestDispatcher rd =
-                    request.getRequestDispatcher("user-record.jsp");
+                    request.getRequestDispatcher("userRecord.jsp");
 
             // The request will be forwarded to the resource
             // specified, here the resource is a JSP named,
@@ -58,6 +76,10 @@ public class UserServlet extends HttpServlet
             rd.forward(request, response);
             out.println("</body>");
             out.println("</html>");
+        }
+        catch (SQLException _e)
+        {
+            System.out.println(_e.getErrorCode());
         }
     }
 

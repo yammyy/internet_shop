@@ -35,4 +35,12 @@ public interface GoodsFields
     public static final String PARAMETER_ID = "good_id";
     public static final String PARAMETER_TYPE = "type";
     public static final String PARAMETER_VALUE = "value";
+
+    public static final String LANGUAGE_TABLE="language";
+    public static final String LANGUAGE_ID="ID";
+    public static final String LANGUAGE_NAME="name";
+
+    public static final String CURRENCY_TABLE="currency";
+    public static final String CURRENCY_ID="ID";
+    public static final String CURRENCY_NAME="name";
 }

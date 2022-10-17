@@ -16,6 +16,7 @@
     <script src="webjars/bootstrap/4.6.2/js/bootstrap.min.js"></script>
     <script src="js/scripts.js"></script>
     <!-- endbuild -->
+    <%@include  file="login.html" %>
     <%@include  file="navbar.html" %>
     <div id="mainContent" class="container">
         <div class="row">

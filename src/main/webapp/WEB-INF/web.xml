@@ -24,6 +24,14 @@
     <servlet-name>CategoryServlet</servlet-name>
     <servlet-class>net.yammyy.servlet.CategoryServlet</servlet-class>
   </servlet>
+  <servlet>
+    <servlet-name>AvatarServlet</servlet-name>
+    <servlet-class>net.yammyy.servlet.AvatarServlet</servlet-class>
+  </servlet>
+  <servlet>
+    <servlet-name>LoginServlet</servlet-name>
+    <servlet-class>net.yammyy.servlet.LoginServlet</servlet-class>
+  </servlet>
 
   <servlet-mapping>
     <servlet-name>SimpleServlet</servlet-name>
@@ -44,6 +52,14 @@
   <servlet-mapping>
     <servlet-name>CategoryServlet</servlet-name>
     <url-pattern>/categories</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>AvatarServlet</servlet-name>
+    <url-pattern>/forNavbar/avatar.jsp</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>LoginServlet</servlet-name>
+    <url-pattern>/loginView</url-pattern>
   </servlet-mapping>
 
 </web-app>

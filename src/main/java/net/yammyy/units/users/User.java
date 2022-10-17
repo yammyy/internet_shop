@@ -10,11 +10,6 @@ import java.util.Currency;
 import java.util.Date;
 import java.util.List;
 
-class Type
-{
-    int id;
-    String name;
-}
 public class User
 {
     int id;
@@ -27,19 +22,31 @@ public class User
     Date regDate;
     Currency stdCurrency;
     LanguageTag stdLanguage;
+    boolean is_blocked;
+    Reason why_blocked;
     List<Good> favorites;
     Delivery delivery;
     Spam spam;
     List<Orders> ordersList;
     Orders cart;
-    public User (int _id, String _login)
+    public User (int _id, String _login, String _password)
     {
         id=_id;
         login=_login;
+        pwd=_password;
+    }
+    @Override public boolean equals (Object obj)
+    {
+        return ((User) obj).login.equals(login);
     }
     public int getId()
     {
         return id;
     }
     public String getLogin() { return login; }
+    public void setLogin(String _login){login=_login;}
+    public String getPassword(){return pwd;}
+    public void setPassword(String _password){pwd=_password;}
+    public Type getRole(){return type;}
+    public void setRole(Type _role){type=_role;}
 }

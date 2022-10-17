@@ -3,6 +3,14 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 
     <div class="row">
+        <div class="col-1"></div>
+        <div class="col-5">
+
+        </select>
+        </div>
+        <div class="col-6"></div>
+    </div>
+    <div class="row">
         <%ArrayList<Good> goods_l =
             (ArrayList<Good>)request.getAttribute("data");
         for(Good good:goods_l)

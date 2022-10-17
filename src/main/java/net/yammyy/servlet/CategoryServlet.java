@@ -12,7 +12,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
-import java.util.List;
+import java.util.Map;
 
 @WebServlet (
         name = "CategoryServlet",
@@ -31,11 +31,15 @@ public class CategoryServlet extends HttpServlet
             DBManager dbManager_l=DBManager.getInstance();
 
             System.out.println("Забираем категории");
-            List<ChoosableParameterValue> categoriesList_l = dbManager_l.getAllCategories();
-            for(ChoosableParameterValue category:categoriesList_l){System.out.println(category.getValue());}
+            Map<Integer,ChoosableParameterValue> allCategories_l = dbManager_l.getAllCategories();
+            if (allCategories_l.size()==0){dbManager_l.refreshAll();}
+            for (Map.Entry<Integer, ChoosableParameterValue> category : allCategories_l.entrySet())
+            {
+                System.out.println(category.getKey() + ":" + category.getValue().getValue());
+            }
             System.out.println("Забрали категории");
 
-            request.setAttribute("data", categoriesList_l);
+            request.setAttribute("data", allCategories_l);
 
             RequestDispatcher rd = request.getRequestDispatcher("categories.jsp");
 
