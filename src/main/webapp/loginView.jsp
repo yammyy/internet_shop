@@ -11,7 +11,7 @@
       <p style="color: red;"><%=request.getAttribute("errorMessage")%></p>
 
       <form method="POST" action=<%=request.getContextPath()%>/loginView>
-         <input type="hidden" name="redirectId" value=<%=request.getParameter("redirectId")%> />
+         <input type="hidden" name="redirectID" value=<%=request.getParameter("redirectID")%> />
          <table border="0">
             <tr>
                <td>User Name</td>

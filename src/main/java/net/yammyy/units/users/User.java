@@ -1,12 +1,12 @@
 package net.yammyy.units.users;
 
 import net.yammyy.units.Delivery;
+import net.yammyy.units.goods.Currency;
 import net.yammyy.units.goods.Good;
 import net.yammyy.units.Orders;
 import net.yammyy.units.Spam;
-import sun.util.locale.LanguageTag;
+import net.yammyy.units.goods.Language;
 
-import java.util.Currency;
 import java.util.Date;
 import java.util.List;
 
@@ -21,7 +21,7 @@ public class User
     Type type;
     Date regDate;
     Currency stdCurrency;
-    LanguageTag stdLanguage;
+    Language stdLanguage;
     boolean is_blocked;
     Reason why_blocked;
     List<Good> favorites;
@@ -34,6 +34,8 @@ public class User
         id=_id;
         login=_login;
         pwd=_password;
+        stdLanguage=new Language(0,"RU","RU");
+        stdCurrency=new Currency(0,"UAH","UAH");
     }
     @Override public boolean equals (Object obj)
     {
@@ -57,4 +59,6 @@ public class User
     {
         return familyName+" "+name;
     }
+    public Language getStandardLanguage (){return stdLanguage;}
+    public Currency getStandardCurrency (){return stdCurrency;}
 }

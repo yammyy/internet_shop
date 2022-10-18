@@ -3,6 +3,7 @@ package net.yammyy.servlet;
 import net.yammyy.utils.FormingGoods;
 import net.yammyy.utils.FormingHTMLElements;
 import net.yammyy.utils.FormingNavigation;
+import net.yammyy.utils.LogMessages;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -20,77 +21,64 @@ import java.util.List;
                 urlPatterns = "/*")
 public class OneGoodServlet extends HttpServlet
 {
-
+    private static final String thisName="OneGoodServlet";
     private void processRequest (HttpServletRequest _request, HttpServletResponse _response)
-            throws ServletException, IOException, SQLException
+            throws IOException, SQLException
     {
-        System.out.println("----------------------------------------");
-        System.out.println("OneGoodServlet 0");
+        int thisLogLine=0;
+        thisLogLine++;System.out.println(thisName+" "+thisLogLine);
         _response.setContentType("text/html;charset=UTF-8");
         PrintWriter writer_l = _response.getWriter();
-        System.out.println("OneGoodServlet 1");
-        //Формируем header с используемыми стилями
+        thisLogLine++;System.out.println(thisName+" "+thisLogLine+" Формируем header с используемыми стилями");
         List<String> csss_l=new ArrayList<>();
-        System.out.println("OneGoodServlet formingHeader 2.1");
         csss_l.add("navbar");
-        System.out.println("OneGoodServlet formingHeader 2.2");
         FormingHTMLElements.formingHeader(_request, _response, csss_l);
-        System.out.println("OneGoodServlet formingHeader 2.3");
-        writer_l.println("</head>");
-        System.out.println("OneGoodServlet formingHeader 2.4End");
-
-        System.out.println("OneGoodServlet 3");
-        //body
+        thisLogLine++;System.out.println(thisName+" "+thisLogLine+" Формируем body");
         writer_l.println("<body>");
-        System.out.println("OneGoodServlet 4");
-        //Формируем навигацию - боковую и верхнюю
+        thisLogLine++;System.out.println(thisName+" "+thisLogLine+" Формируем навигацию - боковую и верхнюю");
         FormingNavigation.formNavBar(_request, _response);
-        System.out.println("OneGoodServlet 5");
+        thisLogLine++;System.out.println(thisName+" "+thisLogLine+" Формируем основной контент");
         writer_l.println("<div id=\"mainContent\" class=\"container\">" +
                          "<div class=\"row\">");
-        writer_l.println("<div class=\"col-2 main-container\">");
-        writer_l.println("</div>");
-        System.out.println("OneGoodServlet 6");
-        writer_l.println("<div class=\"col-10\">");
+        writer_l.println("<div class=\"col-2 main-container\"></div>"+
+                         "<div class=\"col-10\">");
         FormingGoods.formOneGoodView(_request,_response);
-        writer_l.println("</div>");
-        System.out.println("OneGoodServlet 7");
-        writer_l.print("</div></div>");
-        //Формируем js-scripts
+        writer_l.println("</div>" +//col
+                         "</div>" +//row
+                         "</div>");//container
+        thisLogLine++;System.out.println(thisName+" "+thisLogLine+" Формируем js-scripts");
         List<String> jss_l=new ArrayList<>();
         jss_l.add("navbar");
         FormingHTMLElements.formingJSSection(_request,_response,jss_l);
-        System.out.println("OneGoodServlet 8");
-        writer_l.println("</body>\n"+"</html>");
-        System.out.println("OneGoodServlet 9End");
+        thisLogLine++;System.out.println(thisName+" "+thisLogLine);
+        writer_l.println("</body></html>");
+        thisLogLine++;System.out.println(thisName+" "+thisLogLine+"End");
     }
     @Override
-    protected void doGet(
-            HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException
+    protected void doGet(HttpServletRequest _request, HttpServletResponse _response)
+            throws IOException
     {
         try
         {
-            processRequest(request, response);
+            processRequest(_request, _response);
         }
         catch (SQLException _e)
         {
-            throw new RuntimeException(_e);
+            System.out.println(thisName+" doGet "+LogMessages.ERROR_EXCEPTION+" "+_e.getMessage());
         }
     }
 
     @Override
-    protected void doPost(
-            HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException
+    protected void doPost(HttpServletRequest _request, HttpServletResponse _response)
+            throws IOException
     {
         try
         {
-            processRequest(request, response);
+            processRequest(_request, _response);
         }
         catch (SQLException _e)
         {
-            throw new RuntimeException(_e);
+            System.out.println(thisName+" doPost "+LogMessages.ERROR_EXCEPTION+" "+_e.getMessage());
         }
     }
 }

@@ -3,6 +3,8 @@ package net.yammyy.servlet;
 import net.yammyy.db.DBManager;
 import net.yammyy.servletFilter.AppUtils;
 import net.yammyy.units.users.User;
+import net.yammyy.utils.HTMLLinks;
+import net.yammyy.utils.LogMessages;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
@@ -18,6 +20,7 @@ import java.sql.SQLException;
         urlPatterns = "/*")
 public class LoginServlet extends HttpServlet
 {
+    private static final String thisName="LoginServlet";
     private static final long serialVersionUID = 1L;
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -32,15 +35,14 @@ public class LoginServlet extends HttpServlet
         }
         catch (ServletException|IOException _e)
         {
-            throw new RuntimeException(_e);
+            System.out.println(thisName+" doGet "+LogMessages.ERROR_EXCEPTION+" "+_e.getMessage());
         }
     }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException
     {
-        System.out.println("Забираем соединение");
+        System.out.println(thisName+" 1");
         try
         {
             DBManager dbManager_l=DBManager.getInstance();
@@ -58,17 +60,16 @@ public class LoginServlet extends HttpServlet
                 return;
             }
             AppUtils.storeLoginedUser(request.getSession(), userAccount);
-            int redirectId = -1;
-            try {redirectId = Integer.parseInt(request.getParameter("redirectId"));}
-            catch (Exception ignored_l) {}
-            String requestUri = AppUtils.getRedirectAfterLoginUrl(request.getSession(), redirectId);
+            int redirectID = -1;
+            try {redirectID = Integer.parseInt(request.getParameter(HTMLLinks.REDIRECT_ID));} catch (Exception ignored_l) {}
+            String requestUri = AppUtils.getRedirectAfterLoginUrl(request.getSession(), redirectID);
             if (requestUri != null) {response.sendRedirect(requestUri);}
-            //По умолчанию перенаправить на contactus
-            else {response.sendRedirect(request.getContextPath() + "/index");}
+            //По умолчанию перенаправить на home page
+            else {response.sendRedirect(request.getContextPath()+HTMLLinks.HOME_PAGE_LINK);}
         }
-        catch (SQLException _e)
+        catch (SQLException|ServletException|IOException _e)
         {
-            throw new RuntimeException(_e);
+            System.out.println(thisName+" doPost "+LogMessages.ERROR_EXCEPTION+" "+_e.getMessage());
         }
 
     }

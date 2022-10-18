@@ -18,43 +18,44 @@ import java.util.Map;
 
 public class FormingGoods
 {
-    public static void formCategoriesList(HttpServletRequest _request, HttpServletResponse _response)
+    public static void formCategoriesList(HttpServletRequest _request, HttpServletResponse _response, int _category_id)
     {
-        System.out.println("formCategoriesList 1");
+        String thisName="formCategoriesList";
+        int thisLogLine=0;
+        thisLogLine++;System.out.println(thisName+" "+thisLogLine);
         try
         {
-            System.out.println("formCategoriesList 2");
+            thisLogLine++;System.out.println(thisName+" "+thisLogLine);
             DBManager dbManager_l=DBManager.getInstance();
-            System.out.println("formCategoriesList 3");
+            thisLogLine++;System.out.println(thisName+" "+thisLogLine);
             Map<Integer, ChoosableParameterValue> allCategories_l = dbManager_l.getAllCategories();
-            System.out.println("formCategoriesList 4 "+allCategories_l.size());
+            thisLogLine++;System.out.println(thisName+" "+thisLogLine+" "+allCategories_l.size());
             _request.setAttribute("categories", allCategories_l);
-            System.out.println("formCategoriesList 5");
             RequestDispatcher rd = _request.getRequestDispatcher("categories.jsp");
-            System.out.println("formCategoriesList 6");
             rd.include(_request, _response);
-            System.out.println("formCategoriesList 7End");
+            thisLogLine++;System.out.println(thisName+" "+thisLogLine+"End");
         }
         catch (SQLException _e)
         {
-            System.out.println("Ошибка: "+_e.getErrorCode()+" "+_e.getSQLState());
+            System.out.println(thisName+LogMessages.ERROR_EXCEPTION+" "+_e.getErrorCode()+" "+_e.getSQLState());
         }
         catch (IOException|ServletException _e)
         {
-            throw new RuntimeException(_e);
+            System.out.println(thisName+LogMessages.ERROR_EXCEPTION+" "+_e.getMessage());
         }
     }
     public static void formGoodsList(HttpServletRequest _request, HttpServletResponse _response)
     {
-        System.out.println("formGoodsList 1");
+        String thisName="formGoodsList";
+        int thisLogLine=0;
+        thisLogLine++;System.out.println(thisName+" "+thisLogLine);
         try
         {
-            System.out.println("formGoodsList 2");
+            thisLogLine++;System.out.println(thisName+" "+thisLogLine);
             DBManager dbManager_l=DBManager.getInstance();
-            System.out.println("formGoodsList 3");
+            thisLogLine++;System.out.println(thisName+" "+thisLogLine);
             List<Good> allGoods_l = dbManager_l.getGoods();
-            System.out.println("formGoodsList 4 "+allGoods_l.size());
-            System.out.println("formGoodsList 5");
+            thisLogLine++;System.out.println(thisName+" "+thisLogLine+" "+allGoods_l.size());
             PrintWriter writer_l=_response.getWriter();
             writer_l.println("<div class=\"row\">"+
                              "<div class=\"col-1\"></div>"+
@@ -65,53 +66,51 @@ public class FormingGoods
             {
                 writer_l.println("<div class=\"col col-xl-2 col-lg-3 col-md-4 col-sm-6\">"+
                                  "<img src=\"\" />"+
-                                 "<a href=\""+_request.getContextPath()+"/good?good_id="+allGoods_l.get(i).getID()+"\">");
+                                 "<a href=\""+_request.getContextPath()+HTMLLinks.ONE_GOOD_LINK+"?good_id="+allGoods_l.get(i).getID()+"\">");
                 writer_l.println(allGoods_l.get(i).getName());
                 writer_l.println(allGoods_l.get(i).getDescription());
                 writer_l.println(allGoods_l.get(i).getPrice());
                 writer_l.println("</div>");
             }
-
-            writer_l.println("</div>");
+            writer_l.println("</div>");//row
         }
         catch (SQLException _e)
         {
-            System.out.println("Ошибка: "+_e.getErrorCode()+" "+_e.getSQLState());
+            System.out.println(thisName+LogMessages.ERROR_EXCEPTION+" "+_e.getErrorCode()+" "+_e.getSQLState());
         }
         catch (IOException _e)
         {
-            throw new RuntimeException(_e);
+            System.out.println(thisName+LogMessages.ERROR_EXCEPTION+" "+_e.getMessage());
         }
     }
     public static void formOneGoodView (HttpServletRequest _request, HttpServletResponse _response)
     {
-        System.out.println("formGood 1");
+        String thisName="formOneGoodView";
+        int thisLogLine=0;
+        thisLogLine++;System.out.println(thisName+" "+thisLogLine);
         try
         {
-            System.out.println("formGood 2");
+            thisLogLine++;System.out.println(thisName+" "+thisLogLine);
             DBManager dbManager_l=DBManager.getInstance();
-            System.out.println("formGood 3");
+            thisLogLine++;System.out.println(thisName+" "+thisLogLine);
             Good good_l = dbManager_l.getGoodByID(Integer.parseInt(_request.getParameter("good_id")));
-            System.out.println("formGood 4 "+good_l==null);
-            System.out.println("formGood 5");
+            thisLogLine++;System.out.println(thisName+" "+thisLogLine+" Good with id"+_request.getParameter("good_id")+" found "+(good_l!=null));
             PrintWriter writer_l=_response.getWriter();
-
             writer_l.println(good_l.getName());
             writer_l.println(good_l.getDescription());
             writer_l.println(good_l.getPrice());
             User loginedUser=AppUtils.getLoginedUser(_request.getSession(false));
             if (loginedUser!=null){writer_l.println("<a href=\"#\"><i class=\"fa-sharp fa-solid fa-star\"></i></a>");}
             writer_l.println("<a href=\"#\"><span class=\"fa-sharp fa-solid fa-cart-shopping\" /></a>");
-
             writer_l.println("</div>");
         }
         catch (SQLException _e)
         {
-            System.out.println("Ошибка: "+_e.getErrorCode()+" "+_e.getSQLState());
+            System.out.println(thisName+LogMessages.ERROR_EXCEPTION+" "+_e.getErrorCode()+" "+_e.getSQLState());
         }
         catch (IOException _e)
         {
-            throw new RuntimeException(_e);
+            System.out.println(thisName+LogMessages.ERROR_EXCEPTION+" "+_e.getMessage());
         }
     }
 }
