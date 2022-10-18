@@ -2,10 +2,9 @@
 <%@page import="java.util.Map"%>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 
-<link rel="stylesheet" href="css/categories.css">
-<ul>
+<ul class="allCategories">
         <%Map<Integer,ChoosableParameterValue> allCategories_l =
-            (Map<Integer,ChoosableParameterValue>)request.getAttribute("data");
+            (Map<Integer,ChoosableParameterValue>)request.getAttribute("categories");
 
         for (Map.Entry<Integer, ChoosableParameterValue> category : allCategories_l.entrySet())
         { %>

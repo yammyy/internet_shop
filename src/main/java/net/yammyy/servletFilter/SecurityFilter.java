@@ -21,6 +21,12 @@ public class SecurityFilter implements Filter
         System.out.println("doFilter 2 "+request.getContextPath());
         String servletPath = request.getServletPath();
         System.out.println("doFilter 3 "+servletPath);
+        if (servletPath.contains("css/")||servletPath.contains("js/")||servletPath.contains("img/"))
+        {
+            System.out.println("doFilter 3.1");
+            chain.doFilter(request, response);
+            return;
+        }
         // Информация пользователя сохранена в Session (После успешного входа в систему).
         User loginedUser = AppUtils.getLoginedUser(request.getSession());
         System.out.println("doFilter 4 "+(loginedUser==null));

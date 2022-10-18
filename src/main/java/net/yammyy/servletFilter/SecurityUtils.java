@@ -42,6 +42,7 @@ public class SecurityUtils
         {
             System.out.println(_e.getMessage());
         }
+        System.out.println("isSecurityPage 7 "+false);
         return false;
     }
     public static boolean hasPermission (User _user, HttpServletRequest _request)

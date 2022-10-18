@@ -19,7 +19,7 @@ public class Good
         id=_id;
         name=_name;
     }
-    public int getId ()
+    public int getID ()
     {
         return id;
     }

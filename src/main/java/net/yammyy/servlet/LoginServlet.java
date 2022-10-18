@@ -51,17 +51,20 @@ public class LoginServlet extends HttpServlet
             {
                 String errorMessage="Invalid userName or Password";
                 request.setAttribute("errorMessage", errorMessage);
+                userAccount=new User(0,"","");
+                request.setAttribute("user",userAccount);
                 RequestDispatcher dispatcher = request.getRequestDispatcher("loginView.jsp");
                 dispatcher.forward(request, response);
                 return;
             }
             AppUtils.storeLoginedUser(request.getSession(), userAccount);
             int redirectId = -1;
-            redirectId = Integer.parseInt(request.getParameter("redirectId"));
+            try {redirectId = Integer.parseInt(request.getParameter("redirectId"));}
+            catch (Exception ignored_l) {}
             String requestUri = AppUtils.getRedirectAfterLoginUrl(request.getSession(), redirectId);
             if (requestUri != null) {response.sendRedirect(requestUri);}
-            //По умолчанию перенаправить на Index
-            else {response.sendRedirect(request.getContextPath() + "/");}
+            //По умолчанию перенаправить на contactus
+            else {response.sendRedirect(request.getContextPath() + "/index");}
         }
         catch (SQLException _e)
         {

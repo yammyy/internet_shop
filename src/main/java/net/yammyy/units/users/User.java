@@ -49,4 +49,12 @@ public class User
     public void setPassword(String _password){pwd=_password;}
     public Type getRole(){return type;}
     public void setRole(Type _role){type=_role;}
+    public String getPhoto ()
+    {
+        return "img/img_avatar.png";
+    }
+    public String getFIO ()
+    {
+        return familyName+" "+name;
+    }
 }

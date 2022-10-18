@@ -9,6 +9,7 @@ import java.sql.*;
 import java.util.*;
 
 import net.yammyy.units.goods.*;
+import net.yammyy.units.goods.Currency;
 import net.yammyy.units.users.Reason;
 import net.yammyy.units.users.Type;
 import net.yammyy.units.users.User;
@@ -76,7 +77,6 @@ public class DBManager
         inst.refreshBrandsValues();
         inst.refreshColorsValues();
         inst.refreshParameters();
-        inst.refreshBlockingReasonsValues();
         inst.refreshUsersValues();
     }
     private  <T extends ChoosableParameterValue> void refreshChoosableParameterValues (Class<T> type, String _tName, String _fID, String _fValue)
@@ -387,12 +387,72 @@ public class DBManager
     // Find a User by userName and password.
     public User findUser(String _login, String _password)
     {
+        System.out.println("findUser 1");
         User user_l=new User(0,_login,_password);
+        System.out.println("findUser 2 "+_login+" "+_password);
         boolean is_user=users.containsValue(user_l);
+        System.out.println("findUser 3 "+is_user);
         int user_id=users.entrySet().stream().filter(entry -> user_l.equals(entry.getValue())).map(Map.Entry::getKey).findFirst().get();
+        System.out.println("findUser 4 user_id "+user_id);
         if (is_user && users.get(user_id).getPassword().equals(_password)){return users.get(user_id);}
+        System.out.println("findUser 5");
         return null;
     }
     public Map<Integer,Type> getRoles(){System.out.println(roles.size());return roles;}
     public Map<Integer, User> getUsers(){return users;}
+    public List<Language> getLanguages ()
+    {
+        List<Language> languages_l=new ArrayList<>();
+        languages_l.add(new Language(1,"русский","RU"));
+        languages_l.add(new Language(2,"украинский","UA"));
+        languages_l.add(new Language(3,"английский","EN"));
+        return languages_l;
+    }
+    public List<Currency> getCurrencies ()
+    {
+        List<Currency> currencies_l=new ArrayList<>();
+        currencies_l.add(new Currency(1,"гривна","UAH"));
+        currencies_l.add(new Currency(2,"доллар","$"));
+        return currencies_l;
+    }
+    public Good getGoodByID(int _id)
+    {
+        System.out.println("getGood 1");
+        String sql = "SELECT * FROM "+GoodsFields.GOODS_TABLE + " WHERE "+GoodsFields.GOOD_ID + " = ?";
+        System.out.println("getGood 2 SQL: "+sql);
+        PreparedStatement sta = null;
+        System.out.println("getGood 3");
+        ResultSet rs=null;
+        System.out.println("getGood 4");
+        Good res=null;
+        System.out.println("getGood 5");
+        try
+        {
+            System.out.println("getGood 5.1");
+            sta=conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            System.out.println("getGood 5.2");
+            sta.setString(1, String.valueOf(_id));
+            System.out.println("getGood 5.3");
+            rs=sta.executeQuery();
+            System.out.println("getGood 5.4");
+            if (rs.next())
+            {
+                res=new Good(_id,rs.getString(GoodsFields.GOOD_NAME));
+                res.setDescription(rs.getString(GoodsFields.GOOD_DESCRIPTION));
+                res.setPrice(rs.getFloat(GoodsFields.GOOD_PRICE));
+                //Забираем параметры по конкретному товару
+                res.setParams(getGoodParameters(_id));
+                //Забираем параметры по конкретному товару
+                res.setCategories(getGoodCategories(_id));
+            }
+        }
+        catch (SQLException _e){System.out.println("error "+_e.getErrorCode());}
+        finally
+        {
+            try {assert rs!=null;rs.close();} catch (Exception e) { /* ignored */ }
+            try {sta.close();} catch (Exception e) { /* ignored */ }
+        }
+        System.out.println("getGoods 6");
+        return res;
+    }
 }
