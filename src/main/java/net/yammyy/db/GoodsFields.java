@@ -39,8 +39,10 @@ public interface GoodsFields
     public static final String LANGUAGE_TABLE="language";
     public static final String LANGUAGE_ID="ID";
     public static final String LANGUAGE_NAME="name";
+    public static final String LANGUAGE_ABBR="ABBR";
 
     public static final String CURRENCY_TABLE="currency";
     public static final String CURRENCY_ID="ID";
     public static final String CURRENCY_NAME="name";
+    public static final String CURRENCY_ABBR="ABBR";
 }

@@ -13,4 +13,5 @@ public class Currency
     }
     public int getID(){return id;}
     public String getName(){return name;}
-    public String getAbbr(){return abbr;}}
+    public String getAbbr(){return abbr;}
+}

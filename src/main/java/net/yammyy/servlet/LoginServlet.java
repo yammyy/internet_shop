@@ -61,7 +61,7 @@ public class LoginServlet extends HttpServlet
             }
             AppUtils.storeLoginedUser(request.getSession(), userAccount);
             int redirectID = -1;
-            try {redirectID = Integer.parseInt(request.getParameter(HTMLLinks.REDIRECT_ID));} catch (Exception ignored_l) {}
+            try {redirectID = Integer.parseInt(request.getParameter(HTMLLinks.PARAMETER_REDIRECT_ID));} catch (Exception ignored_l) {}
             String requestUri = AppUtils.getRedirectAfterLoginUrl(request.getSession(), redirectID);
             if (requestUri != null) {response.sendRedirect(requestUri);}
             //По умолчанию перенаправить на home page

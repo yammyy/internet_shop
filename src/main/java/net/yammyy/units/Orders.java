@@ -13,14 +13,13 @@ class Status
     Date dateChange;
     User userChange;
 }
-class Order
-{
-    Good good;
-    int quantity;
-}
 public class Orders
 {
     List<Order> goodsList;
     Delivery delivery;
     Status status;
+    public List<Order> getOrder ()
+    {
+        return goodsList;
+    }
 }

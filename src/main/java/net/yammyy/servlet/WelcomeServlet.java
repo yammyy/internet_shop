@@ -1,11 +1,7 @@
 package net.yammyy.servlet;
 
-import net.yammyy.utils.FormingGoods;
-import net.yammyy.utils.FormingHTMLElements;
-import net.yammyy.utils.FormingNavigation;
-import net.yammyy.utils.LogMessages;
+import net.yammyy.utils.*;
 
-import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -34,20 +30,24 @@ public class WelcomeServlet extends HttpServlet
         List<String> csss_l=new ArrayList<>();
         csss_l.add("categories");
         csss_l.add("navbar");
-        FormingHTMLElements.formingHeader(_request,_response,csss_l);
+        csss_l.add("avatar");
+        FormingHTMLElements.formingHeader(_request,_response,csss_l, HTMLLinks.TITLE+" - Товары");
         thisLogLine++;System.out.println(thisName+" "+thisLogLine+" Формируем body");
         writer_l.println("<body>");
         thisLogLine++;System.out.println(thisName+" "+thisLogLine+" Формируем навигацию - боковую и верхнюю");
         FormingNavigation.formNavBar(_request, _response);
         writer_l.println("<div id=\"mainContent\" class=\"container\">" +
                          "<div class=\"row\">");
-        writer_l.println("<div class=\"col-2 main-container\">");
+        writer_l.println("<div class=\"col-2 main-container allCategories\">");
         thisLogLine++;System.out.println(thisName+" "+thisLogLine+" Формируем список категорий для боковой панели");
-        FormingGoods.formCategoriesList(_request,_response,0);
+        int category_id;
+        if (_request.getParameterMap().isEmpty()) {category_id=0;}
+        else {category_id=Integer.parseInt(_request.getParameter(HTMLLinks.PARAMETER_CATEGORY_ID));}
+        FormingGoods.formCategoriesList(_request,_response,category_id); //вот тут
         writer_l.println("</div>");
         thisLogLine++;System.out.println(thisName+" "+thisLogLine+" Формируем список товаров");
         writer_l.println("<div class=\"col-10\">");
-        FormingGoods.formGoodsList(_request,_response);
+        FormingGoods.formGoodsList(_request,_response,category_id);
         writer_l.println("</div>" +//col
                          "</div>" +//row
                          "</div>");//container
@@ -60,11 +60,11 @@ public class WelcomeServlet extends HttpServlet
         thisLogLine++;System.out.println(thisName+" "+thisLogLine+"End");
     }
     @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+    protected void doGet(HttpServletRequest _request, HttpServletResponse _response)
     {
         try
         {
-            processRequest(request, response);
+            processRequest(_request, _response);
         }
         catch (SQLException|ServletException|IOException _e)
         {

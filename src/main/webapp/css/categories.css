@@ -1,0 +1,15 @@
+.allCategories ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+.allCategories ul a{
+    outline: none;
+    text-decoration: none;
+    color: #090063;
+}
+.allCategories ul .selected a{
+    outline: none;
+    text-decoration: none;
+    color: #1F96D2;
+}

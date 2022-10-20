@@ -13,14 +13,14 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-@WebServlet(
-        name = "OneGoodServlet",
-                urlPatterns = "/*")
-public class OneGoodServlet extends HttpServlet
+@WebServlet (
+        name = "LoginedUserServlet",
+        urlPatterns = "/*")
+public class LoginedUserServlet extends HttpServlet
 {
-    private static final String thisName="OneGoodServlet";
+    private static final String thisName="LoginedUserServlet";
     private void processRequest (HttpServletRequest _request, HttpServletResponse _response)
-            throws IOException, SQLException
+            throws ServletException, IOException, SQLException
     {
         int thisLogLine=0;
         thisLogLine++;System.out.println(thisName+" "+thisLogLine);
@@ -28,20 +28,21 @@ public class OneGoodServlet extends HttpServlet
         PrintWriter writer_l = _response.getWriter();
         thisLogLine++;System.out.println(thisName+" "+thisLogLine+" Формируем header с используемыми стилями");
         List<String> csss_l=new ArrayList<>();
-        csss_l.add("navbar");
         csss_l.add("categories");
+        csss_l.add("navbar");
         csss_l.add("avatar");
-        FormingHTMLElements.formingHeader(_request, _response, csss_l, HTMLLinks.TITLE+" - Описание товара");
+        FormingHTMLElements.formingHeader(_request, _response, csss_l, HTMLLinks.TITLE+" - Товары");
         thisLogLine++;System.out.println(thisName+" "+thisLogLine+" Формируем body");
         writer_l.println("<body>");
         thisLogLine++;System.out.println(thisName+" "+thisLogLine+" Формируем навигацию - боковую и верхнюю");
         FormingNavigation.formNavBar(_request, _response);
-        thisLogLine++;System.out.println(thisName+" "+thisLogLine+" Формируем основной контент");
         writer_l.println("<div id=\"mainContent\" class=\"container\">" +
                          "<div class=\"row\">");
-        writer_l.println("<div class=\"col-2 main-container\"></div>"+
-                         "<div class=\"col-10\">");
-        FormingGoods.formOneGoodView(_request,_response);
+        writer_l.println("<div class=\"col-2\">");
+        writer_l.println("</div>");
+        thisLogLine++;System.out.println(thisName+" "+thisLogLine+" Формируем список товаров");
+        writer_l.println("<div class=\"col-10\">");
+        FormingUser.formProfile(_request, _response);
         writer_l.println("</div>" +//col
                          "</div>" +//row
                          "</div>");//container
@@ -50,32 +51,30 @@ public class OneGoodServlet extends HttpServlet
         jss_l.add("navbar");
         FormingHTMLElements.formingJSSection(_request,_response,jss_l);
         thisLogLine++;System.out.println(thisName+" "+thisLogLine);
-        writer_l.println("</body></html>");
+        writer_l.println("</body>\n"+"</html>");
         thisLogLine++;System.out.println(thisName+" "+thisLogLine+"End");
     }
     @Override
     protected void doGet(HttpServletRequest _request, HttpServletResponse _response)
-            throws IOException
     {
         try
         {
             processRequest(_request, _response);
         }
-        catch (SQLException _e)
+        catch (SQLException|ServletException|IOException _e)
         {
             System.out.println(thisName+" doGet "+LogMessages.ERROR_EXCEPTION+" "+_e.getMessage());
         }
     }
 
     @Override
-    protected void doPost(HttpServletRequest _request, HttpServletResponse _response)
-            throws IOException
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
     {
         try
         {
-            processRequest(_request, _response);
+            processRequest(request, response);
         }
-        catch (SQLException _e)
+        catch (SQLException|ServletException|IOException _e)
         {
             System.out.println(thisName+" doPost "+LogMessages.ERROR_EXCEPTION+" "+_e.getMessage());
         }

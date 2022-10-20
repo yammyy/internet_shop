@@ -10,11 +10,12 @@ import java.util.List;
 
 public class FormingHTMLElements
 {
-    public static void formingHeader(HttpServletRequest _request,HttpServletResponse _response, List<String> _csss)
+    public static void formingHeader(HttpServletRequest _request,HttpServletResponse _response, List<String> _csss, String _title)
             throws IOException
     {
         PrintWriter _writer=_response.getWriter();
         _writer.println("<head>"+
+                        "<title>"+_title+"</title>"+
                          "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />"+
                          //Bootstrap CSS
                          "<link type=\"text/css\" rel=\"stylesheet\" href=\""+_request.getContextPath()+"/webjars/bootstrap/4.6.2/css/bootstrap.min.css\">"+

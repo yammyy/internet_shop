@@ -28,6 +28,10 @@
     <servlet-name>OneGoodServlet</servlet-name>
     <servlet-class>net.yammyy.servlet.OneGoodServlet</servlet-class>
   </servlet>
+  <servlet>
+    <servlet-name>LoginedUserServlet</servlet-name>
+    <servlet-class>net.yammyy.servlet.LoginedUserServlet</servlet-class>
+  </servlet>
 
   <servlet-mapping>
     <servlet-name>StatusCodeDemo</servlet-name>
@@ -52,6 +56,10 @@
   <servlet-mapping>
     <servlet-name>OneGoodServlet</servlet-name>
     <url-pattern>/good</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>LoginedUserServlet</servlet-name>
+    <url-pattern>/userProfile</url-pattern>
   </servlet-mapping>
 
 </web-app>

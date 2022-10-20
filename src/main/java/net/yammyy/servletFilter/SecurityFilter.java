@@ -49,9 +49,9 @@ public class SecurityFilter implements Filter
                 thisLogLine++;System.out.println(thisName+" "+thisLogLine+" "+requestUri);
                 // Сохранить текущую страницу для перенаправления (redirect) после успешного входа в систему.
                 int redirectID = AppUtils.storeRedirectAfterLoginUrl(request_l.getSession(), requestUri);
-                thisLogLine++;System.out.println(thisName+" "+thisLogLine+request_l.getContextPath() +
-                                                 HTMLLinks.LOGIN_LINK + "?"+HTMLLinks.REDIRECT_ID+"=" + redirectID);
-                response_l.sendRedirect(request_l.getContextPath() + HTMLLinks.LOGIN_LINK + "?"+HTMLLinks.REDIRECT_ID+"=" + redirectID);
+                thisLogLine++;System.out.println(thisName+" "+thisLogLine+request_l.getContextPath()+
+                                                 HTMLLinks.LOGIN_LINK+"?"+HTMLLinks.PARAMETER_REDIRECT_ID+"="+redirectID);
+                response_l.sendRedirect(request_l.getContextPath()+HTMLLinks.LOGIN_LINK+"?"+HTMLLinks.PARAMETER_REDIRECT_ID+"="+redirectID);
                 return;
             }
             // Проверить имеет ли пользователь доступ?

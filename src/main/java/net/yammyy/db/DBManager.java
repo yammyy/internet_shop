@@ -26,6 +26,8 @@ public class DBManager
     private Map<Integer, Type> roles;
     private Map<Integer, Reason> blocking_reasons;
     private Map<Integer, User> users;
+    private Map<Integer, Language> languages;
+    private Map<Integer, Currency> currencies;
 
     public static synchronized DBManager getInstance() throws IOException, SQLException
     {
@@ -77,6 +79,8 @@ public class DBManager
         inst.refreshBrandsValues();
         inst.refreshColorsValues();
         inst.refreshParameters();
+
+        inst.refreshRegionalSetting();
         inst.refreshUsersValues();
     }
     private  <T extends ChoosableParameterValue> void refreshChoosableParameterValues (Class<T> type, String _tName, String _fID, String _fValue)
@@ -161,6 +165,53 @@ public class DBManager
             sta=conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             System.out.println("getGoods 5.2");
             sta.setString(1, "0");
+            System.out.println("getGoods 5.3");
+            rs=sta.executeQuery();
+            System.out.println("getGoods 5.4");
+            while (rs.next())
+            {
+                int entity_id=rs.getInt(GoodsFields.GOOD_ID);
+                Good entity_l=new Good(entity_id,rs.getString(GoodsFields.GOOD_NAME));
+                entity_l.setDescription(rs.getString(GoodsFields.GOOD_DESCRIPTION));
+                entity_l.setPrice(rs.getFloat(GoodsFields.GOOD_PRICE));
+                //Забираем параметры по конкретному товару
+                entity_l.setParams(getGoodParameters(entity_id));
+                //Забираем параметры по конкретному товару
+                entity_l.setCategories(getGoodCategories(entity_id));
+                res.add(entity_l);
+            }
+        }
+        catch (SQLException _e){System.out.println("error "+_e.getErrorCode());}
+        finally
+        {
+            try {assert rs!=null;rs.close();} catch (Exception e) { /* ignored */ }
+            try {sta.close();} catch (Exception e) { /* ignored */ }
+        }
+        System.out.println("getGoods 6");
+        return res;
+    }
+    public List<Good> getGoods(int _parameter, int _value)
+    {
+        System.out.println("getGoods 1");
+        String sql = "SELECT t2.* FROM "+GoodsFields.PARAMETER_TABLE+" t1 join "+GoodsFields.GOODS_TABLE+" t2 " +
+                     "on t1."+GoodsFields.PARAMETER_ID+"=t2."+GoodsFields.GOOD_ID+
+                     " WHERE t1."+GoodsFields.PARAMETER_TYPE+"=? and t1."+GoodsFields.PARAMETER_VALUE+"=? and " +
+                     "t2."+GoodsFields.GOOD_ALREADY_SOLD+"=?";
+        System.out.println("getGoods 2 SQL: "+sql);
+        PreparedStatement sta = null;
+        System.out.println("getGoods 3");
+        ResultSet rs=null;
+        System.out.println("getGoods 4");
+        List<Good> res=new ArrayList<>();
+        System.out.println("getGoods 5");
+        try
+        {
+            System.out.println("getGoods 5.1");
+            sta=conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            System.out.println("getGoods 5.2");
+            sta.setString(1, String.valueOf(_parameter));
+            sta.setString(2, String.valueOf(_value));
+            sta.setString(3, "0");
             System.out.println("getGoods 5.3");
             rs=sta.executeQuery();
             System.out.println("getGoods 5.4");
@@ -371,12 +422,20 @@ public class DBManager
                 System.out.println("get Users 4.2");
                 int id_l=rs.getInt(UsersFields.USERS_ID);
                 System.out.println("get Users 4.3");
-                User user_l=new User(id_l,rs.getString(UsersFields.USERS_LOGIN),rs.getString(UsersFields.USERS_PASSWORD));
+                User user_l=new User(id_l,rs.getString(UsersFields.USERS_LOGIN),rs.getString(UsersFields.USERS_PASSWORD),
+                                     rs.getDate(UsersFields.USERS_REGISTRATION_DATE));
                 System.out.println("get Users 4.4");
                 Type role=roles.get(rs.getInt(UsersFields.USERS_ROLE));
                 System.out.println("get Users 4.5");
                 user_l.setRole(role);
-                System.out.println("get Users 4.6");
+                Language language_l=languages.get(rs.getInt(UsersFields.USERS_STANDARD_LANGUAGE));
+                user_l.setStandardLanguage(language_l);
+                Currency currency_l=currencies.get(rs.getInt(UsersFields.USERS_STANDARD_CURRENCY));
+                user_l.setStandardCurrency(currency_l);
+                boolean is_blocked=rs.getBoolean(UsersFields.USERS_BLOCKED);
+                Reason reason_l=null;
+                if (is_blocked){reason_l=blocking_reasons.get(rs.getInt(UsersFields.USERS_BLOCKED));}
+                user_l.setBlockingReason(is_blocked,reason_l);
                 users.put(id_l,user_l);
                 System.out.println("get Users 4.7");
             }
@@ -400,21 +459,37 @@ public class DBManager
     }
     public Map<Integer,Type> getRoles(){System.out.println(roles.size());return roles;}
     public Map<Integer, User> getUsers(){return users;}
-    public List<Language> getLanguages ()
+    public void refreshRegionalSetting()
     {
-        List<Language> languages_l=new ArrayList<>();
-        languages_l.add(new Language(1,"русский","RU"));
-        languages_l.add(new Language(2,"украинский","UA"));
-        languages_l.add(new Language(3,"английский","EN"));
-        return languages_l;
+        languages=new TreeMap<>();
+        currencies=new TreeMap<>();
+        String sql = "SELECT * FROM "+GoodsFields.CURRENCY_TABLE;
+        System.out.println("get  3. SQL: "+sql);
+        try (Statement sta=conn.createStatement();ResultSet rs=sta.executeQuery(sql))
+        {
+            while (rs.next())
+            {
+                int id_l=rs.getInt(GoodsFields.CURRENCY_ID);
+                Currency currency_l = new Currency(id_l,rs.getString(GoodsFields.CURRENCY_NAME),rs.getString(GoodsFields.CURRENCY_ABBR));
+                currencies.put(id_l,currency_l);
+            }
+        }
+        catch (SQLException _e) {System.out.println("get   error "+_e.getSQLState()+" "+_e.getErrorCode());}
+        sql = "SELECT * FROM "+GoodsFields.LANGUAGE_TABLE;
+        System.out.println("get  3. SQL: "+sql);
+        try (Statement sta=conn.createStatement();ResultSet rs=sta.executeQuery(sql))
+        {
+            while (rs.next())
+            {
+                int id_l=rs.getInt(GoodsFields.LANGUAGE_ID);
+                Language language_l = new Language(id_l,rs.getString(GoodsFields.LANGUAGE_NAME),rs.getString(GoodsFields.LANGUAGE_ABBR));
+                languages.put(id_l,language_l);
+            }
+        }
+        catch (SQLException _e) {System.out.println("get   error "+_e.getSQLState()+" "+_e.getErrorCode());}
     }
-    public List<Currency> getCurrencies ()
-    {
-        List<Currency> currencies_l=new ArrayList<>();
-        currencies_l.add(new Currency(1,"гривна","UAH"));
-        currencies_l.add(new Currency(2,"доллар","$"));
-        return currencies_l;
-    }
+    public List<Language> getLanguages (){return new ArrayList<>(languages.values());}
+    public List<Currency> getCurrencies (){return new ArrayList<>(currencies.values());}
     public Good getGoodByID(int _id)
     {
         System.out.println("getGood 1");

@@ -9,4 +9,5 @@ public class Reason
         id=_id;
         name=_name;
     }
+    public String getReason(){return name;}
 }

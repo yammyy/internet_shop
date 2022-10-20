@@ -33,8 +33,10 @@ public class FormingNavigation
             }
             else
             {
-                formAvatar(_request,_response);
-                writer_l.println(loginedUser.getFIO());
+                writer_l.println("<a href=\""+_request.getContextPath()+HTMLLinks.PROFILE_LINK+"\">" +
+                                 "<img class=\"avatar\" src=\""+loginedUser.getPhoto()+"\">" +
+                                 "</a>");
+                writer_l.println(loginedUser.getFamilyAndName());
             }
             writer_l.println("</div>"+//col
                              "<div class=\"col col-2 d-flex align-items-center justify-content-end\">"+
@@ -44,10 +46,10 @@ public class FormingNavigation
                              "<div class=\"row\">"+
                              "<div class=\"col\">" +
                              "<ul>" +
-                             "<li><a href=\""+HTMLLinks.HOME_PAGE_LINK+"\">Каталог</a></li>");
-            if (loginedUser!=null){writer_l.println("<li><a href=\""+HTMLLinks.USER_ORDERS+"\">Мои заказы</a></li>");}
-            writer_l.println("<li><a href=\""+HTMLLinks.USER_CART+"\">Корзина</a></li>");
-            if (loginedUser!=null){writer_l.println("<li><a href=\""+HTMLLinks.USER_FAVORITES+"\">Список желаний</a></li>");}
+                             "<li><a href=\""+_request.getContextPath()+HTMLLinks.HOME_PAGE_LINK+"\">Каталог</a></li>");
+            if (loginedUser!=null){writer_l.println("<li><a href=\""+_request.getContextPath()+HTMLLinks.USER_ORDERS+"\">Мои заказы</a></li>");}
+            writer_l.println("<li><a href=\""+_request.getContextPath()+HTMLLinks.USER_CART+"\">Корзина</a></li>");
+            if (loginedUser!=null){writer_l.println("<li><a href=\""+_request.getContextPath()+HTMLLinks.USER_FAVORITES+"\">Список желаний</a></li>");}
             writer_l.println("</ul>" +
                              "</div>"+//col
                              "</div>" +//row
@@ -98,21 +100,38 @@ public class FormingNavigation
             rdLng.include(_request, _response);
             writer_l.println("</li>" +
                              "<li>");
-            List<Currency> currencies_l=null;
-            currencies_l=dbManager_l.getCurrencies();
+            List<Currency> currencies_l=dbManager_l.getCurrencies();
             System.out.println("formNavBar Language Количество валют "+currencies_l.size());
             _request.setAttribute("currencies",currencies_l);
             RequestDispatcher rdCur=_request.getRequestDispatcher("forNavbar/currencies.jsp");
             rdCur.include(_request, _response);
             writer_l.println("</li>");
-            if (loginedUser!=null){writer_l.println("<li><a href=\""+HTMLLinks.USER_FAVORITES+"\"><span class=\"fa-sharp fa-solid fa-star\" /></a></li>");}
+            if (loginedUser!=null){writer_l.println("<li><a href=\""+_request.getContextPath()+HTMLLinks.USER_FAVORITES+"\">" +
+                                                    "<span class=\"fa-sharp fa-solid fa-star\" /></a></li>");}
             writer_l.println("<li>");
-            formAvatar(_request,_response);
+            if (loginedUser!=null)
+            {
+                writer_l.println(
+                        "<div class=\"dropdown\">"+
+                        "<a href=\""+_request.getContextPath()+HTMLLinks.PROFILE_LINK+"\"><img class=\"avatar\" src=\""+loginedUser.getPhoto()+"\">"+"</a>"+
+                        "<ul>"+
+                        "<div class=\"dropdown-content\">"+
+                        "<li>" +
+                        "<a href=\""+_request.getContextPath()+HTMLLinks.PROFILE_LINK+"\"><span class=\"fa-sharp fa-solid fa-user\" />Профиль</a>"+
+                        "</li>"+
+                        "<li>" +
+                        "<a href=\""+_request.getContextPath()+HTMLLinks.LOGOUT_LINK+"\"><span class=\"fa-sharp fa-solid fa-sign-out\" />Выйти</a>"+
+                        "</li>"+
+                        "</div>"+
+                        "</ul>"+
+                        "</div>");
+            }
+            else {writer_l.println("<a href=\""+_request.getContextPath()+HTMLLinks.LOGIN_LINK+"\"><i class=\"fa-solid fa-right-to-bracket\"></i></a>");}
             writer_l.println("</li>");
             writer_l.println("</ul>" +
                              "</div>" +//col
                              "<div class=\"col-1 d-flex align-items-center \">" +
-                             "<a href=\""+HTMLLinks.USER_CART+"\"><span class=\"fa-sharp fa-solid fa-cart-shopping\" /></a>" +
+                             "<a href=\""+_request.getContextPath()+HTMLLinks.USER_CART+"\"><span class=\"fa-sharp fa-solid fa-cart-shopping\" /></a>" +
                              "</div>" +//col
                              "</div>" +//row
                              "</div>" +//container
@@ -122,22 +141,6 @@ public class FormingNavigation
         catch (IOException|ServletException|SQLException _e)
         {
             System.out.println("formNavBar "+LogMessages.ERROR_EXCEPTION+" "+_e.getMessage());
-        }
-    }
-    public static void formAvatar(HttpServletRequest _request,HttpServletResponse _response)
-            throws ServletException, IOException
-    {
-        User loginedUser=AppUtils.getLoginedUser(_request.getSession(false));
-        if (loginedUser==null)
-        {
-            PrintWriter writer_l = _response.getWriter();
-            writer_l.println("<a href=\"#\"><i class=\"fa-solid fa-right-to-bracket\"></i></a>");
-        }
-        else
-        {
-            _request.setAttribute("photo", loginedUser.getPhoto());
-            RequestDispatcher rd = _request.getRequestDispatcher("forNavbar/avatar.jsp");
-            rd.include(_request, _response);
         }
     }
 }

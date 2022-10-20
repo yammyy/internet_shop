@@ -15,12 +15,12 @@ public class AppUtils
     // Сохранить информацию пользователя в Session.
     public static void storeLoginedUser(HttpSession _session, User _loginedUser)
     {
-        _session.setAttribute(HTMLLinks.SESSION_USER, _loginedUser);
+        _session.setAttribute(HTMLLinks.PARAMETER_SESSION_USER, _loginedUser);
     }
     // Получить информацию пользователя, сохраненную в Session.
     public static User getLoginedUser(HttpSession _session)
     {
-        User loginedUser_l = (User) _session.getAttribute(HTMLLinks.SESSION_USER);
+        User loginedUser_l = (User) _session.getAttribute(HTMLLinks.PARAMETER_SESSION_USER);
         return loginedUser_l;
     }
     public static int storeRedirectAfterLoginUrl(HttpSession _session, String _requestUri)
