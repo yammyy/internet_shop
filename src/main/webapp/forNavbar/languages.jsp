@@ -8,7 +8,7 @@
                     (ArrayList<Language>)request.getAttribute("languages");
                 for(Language lng:lng_l)
                 { %>
-                    <li><a href="#"><%=lng.getAbbr()%></a></li>
+                    <li><a href="#"><%=lng.getAbbreviation()%></a></li>
              <% } %>
          </div>
     </ul>

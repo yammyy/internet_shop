@@ -33,8 +33,8 @@
 
       <p style="color:blue;">Login with:</p>
 
-      employee1/123 <br>
-      manager1/123
+      yammyy/123 <br>
+      adm.yammyy/123
 
 
 

@@ -32,6 +32,22 @@
     <servlet-name>LoginedUserServlet</servlet-name>
     <servlet-class>net.yammyy.servlet.LoginedUserServlet</servlet-class>
   </servlet>
+  <servlet>
+    <servlet-name>OrdersServlet</servlet-name>
+    <servlet-class>net.yammyy.servlet.OrdersServlet</servlet-class>
+  </servlet>
+  <servlet>
+    <servlet-name>AddCartServlet</servlet-name>
+    <servlet-class>net.yammyy.servlet.AddCartServlet</servlet-class>
+  </servlet>
+  <servlet>
+    <servlet-name>ShowCartServlet</servlet-name>
+    <servlet-class>net.yammyy.servlet.ShowCartServlet</servlet-class>
+  </servlet>
+  <servlet>
+    <servlet-name>AddOrderServlet</servlet-name>
+    <servlet-class>net.yammyy.servlet.AddOrderServlet</servlet-class>
+  </servlet>
 
   <servlet-mapping>
     <servlet-name>StatusCodeDemo</servlet-name>
@@ -54,12 +70,32 @@
     <url-pattern>/index</url-pattern>
   </servlet-mapping>
   <servlet-mapping>
+    <servlet-name>WelcomeServlet</servlet-name>
+    <url-pattern></url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
     <servlet-name>OneGoodServlet</servlet-name>
     <url-pattern>/good</url-pattern>
   </servlet-mapping>
   <servlet-mapping>
     <servlet-name>LoginedUserServlet</servlet-name>
     <url-pattern>/userProfile</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>OrdersServlet</servlet-name>
+    <url-pattern>/orders</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>AddCartServlet</servlet-name>
+    <url-pattern>/changelist</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>ShowCartServlet</servlet-name>
+    <url-pattern>/opencart</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>AddOrderServlet</servlet-name>
+    <url-pattern>/neworder</url-pattern>
   </servlet-mapping>
 
 </web-app>

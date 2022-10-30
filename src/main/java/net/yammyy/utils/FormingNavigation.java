@@ -1,7 +1,6 @@
 package net.yammyy.utils;
 
 import net.yammyy.db.DBManager;
-import net.yammyy.servletFilter.AppUtils;
 import net.yammyy.units.goods.Currency;
 import net.yammyy.units.goods.Language;
 import net.yammyy.units.users.User;
@@ -12,7 +11,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.sql.SQLException;
 import java.util.List;
 
 public class FormingNavigation
@@ -50,6 +48,8 @@ public class FormingNavigation
             if (loginedUser!=null){writer_l.println("<li><a href=\""+_request.getContextPath()+HTMLLinks.USER_ORDERS+"\">Мои заказы</a></li>");}
             writer_l.println("<li><a href=\""+_request.getContextPath()+HTMLLinks.USER_CART+"\">Корзина</a></li>");
             if (loginedUser!=null){writer_l.println("<li><a href=\""+_request.getContextPath()+HTMLLinks.USER_FAVORITES+"\">Список желаний</a></li>");}
+            if ((loginedUser!=null)&&(loginedUser.getRole().getID()==2))
+            {writer_l.println("<li><a href=\""+_request.getContextPath()+"/userRecord\">Редактирование пользователей</a></li>");}
             writer_l.println("</ul>" +
                              "</div>"+//col
                              "</div>" +//row
@@ -59,13 +59,13 @@ public class FormingNavigation
                              "<li>");
             writer_l.println("<a href=\"#\">");
             if (loginedUser==null){writer_l.println("RU");}
-            else {writer_l.println(loginedUser.getStandardLanguage().getAbbr());}
+            else {writer_l.println(loginedUser.getStandardLanguage().getAbbreviation());}
             writer_l.println(" Языковые настройки</a>");
             writer_l.println("</li>" +
                              "<li>");
             writer_l.println("<a href=\"#\">");
             if (loginedUser==null){writer_l.println("UAH");}
-            else {writer_l.println(loginedUser.getStandardCurrency().getAbbr());}
+            else {writer_l.println(loginedUser.getStandardCurrency().getAbbreviation());}
             writer_l.println(" Настройки валюты</a>");
             writer_l.println("</li>" +
                              "</ul>" +
@@ -138,7 +138,7 @@ public class FormingNavigation
                              "</nav>");
 
         }
-        catch (IOException|ServletException|SQLException _e)
+        catch (IOException|ServletException _e)
         {
             System.out.println("formNavBar "+LogMessages.ERROR_EXCEPTION+" "+_e.getMessage());
         }

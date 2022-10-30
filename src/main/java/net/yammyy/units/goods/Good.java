@@ -1,52 +1,71 @@
 package net.yammyy.units.goods;
 
-import java.util.ArrayList;
-import java.util.Currency;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-public class Good
-{
+public class Good {
     int id;
     String name;
     String description;
-    Currency currency;
     double price;
+    Date dt;
     List<Category> categories;
-    Map<Integer,GoodParameter> parameters;
-    public Good (int _id, String _name)
-    {
-        id=_id;
-        name=_name;
+    Map<Integer, GoodParameter> parameters;
+
+    public Good(int goodID, String goodName) {
+        id = goodID;
+        name = goodName;
+        categories = new ArrayList<>();
+        parameters = new TreeMap<>();
     }
-    public int getID ()
-    {
+
+    public int getID() {
         return id;
     }
-    public String getName () {return name;}
-    public String getDescription ()
-    {
+
+    public String getName() {return name;}
+
+    public String getDescription() {
         return description;
     }
-    public void setDescription (String _description)
-    {
-        description=_description;
+
+    public void setDescription(String goodDescription) {
+        description = goodDescription;
     }
-    public double getPrice ()
-    {
+
+    public double getPrice() {
         return price;
     }
-    public void setPrice (double _price)
-    {
-        price=_price;
+
+    public void setPrice(double goodPrice) {
+        price = goodPrice;
     }
-    public String getParameter(int _id){return parameters.get(_id).getValue();}
-    public void setParams (Map<Integer, GoodParameter> _goodParameters){parameters=_goodParameters;}
-    public List<String> getCategories()
-    {
-        List<String> res=new ArrayList<>();
-        for (int i=0;i<categories.size();i++){res.add(categories.get(i).getValue());}
-        return res;
+
+    public String getParameter(int id) {return parameters.get(id).getValue();}
+
+    public void setParams(Map<Integer, GoodParameter> goodParameterMap) {parameters = goodParameterMap;}
+
+    public void setParam(GoodParameter goodParameter) {parameters.put(goodParameter.getID(), goodParameter);}
+
+    public List<String> getCategories() {
+        List<String> result = new ArrayList<>();
+        for (int i = 0; i < categories.size(); i++) {
+            result.add(categories.get(i).getValue());
+        }
+        return result;
     }
-    public void setCategories (List<Category> _goodCategories){categories=_goodCategories;}
+
+    public void setCategories(List<Category> goodCategories) {categories = goodCategories;}
+
+    public void addCategory(ChoosableParameterValue goodCategory) {categories.add((Category) goodCategory);}
+
+    public boolean hasCategory(int categoryId) {
+        for (int i = 0; i < categories.size(); i++) {
+            if (categories.get(i).getID() == categoryId) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void setDateWhenAdded(Date dateWhenAdded) {dt = dateWhenAdded;}
 }

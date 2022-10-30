@@ -1,4 +1,4 @@
-package net.yammyy.units;
+package net.yammyy.units.order;
 
 public class Spam
 {

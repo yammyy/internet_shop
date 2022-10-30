@@ -4,9 +4,10 @@
       <h1>Displaying Student List</h1>
       <table border ="1" width="500" align="center" id="content">
          <tr bgcolor="00FF7F">
-          <th><b>Student Name</b></th>
-          <th><b>Student Age</b></th>
-          <th><b>Course Undertaken</b></th>
+          <th><b>User ID</b></th>
+          <th><b>User login</b></th>
+          <th><b>User Name</b></th>
+          <th><b>Edit</b></th>
          </tr>
         <%-- Fetching the attributes of the request object
              which was previously set by the servlet
@@ -20,8 +21,10 @@
             <tr>
                 <td><%=s.getId()%></td>
                 <td><%=s.getLogin()%></td>
-                <td><%=s.getLogin()%></td>
+                <td><%=s.getFamilyAndName()%></td>
+                <td><a href=<%=request.getContextPath()+"/userRecord?user_id="+s.getId()%>>edit</td>
             </tr>
             <%}%>
         </table>
         <hr/>
+        <a href=<%=request.getContextPath()%>/logout>Выйти</a>

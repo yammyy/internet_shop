@@ -1,9 +1,13 @@
 package net.yammyy.servlet;
 
 import net.yammyy.db.DBManager;
-import net.yammyy.units.goods.Parameter;
+import net.yammyy.units.goods.Currency;
+import net.yammyy.units.goods.Language;
+import net.yammyy.units.users.Reason;
 import net.yammyy.units.users.Type;
 import net.yammyy.units.users.User;
+import net.yammyy.utils.HTMLLinks;
+import net.yammyy.utils.LogMessages;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
@@ -15,19 +19,17 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
-@WebServlet (
+@WebServlet(
         name = "UserServlet",
-        urlPatterns = "/*")
-public class UserServlet extends HttpServlet
-{
+        urlPatterns = "/userRecord")
+public class UserServlet extends HttpServlet {
+    private static final String thisName = "LoginServlet";
+
     private void processRequest(
             HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException
-    {
+            throws ServletException, IOException {
         response.setContentType("text/html;charset=UTF-8");
         try (PrintWriter out = response.getWriter()) {
             out.println("<!DOCTYPE html>");
@@ -37,49 +39,24 @@ public class UserServlet extends HttpServlet
             out.println("</head>");
             out.println("<body>");
 
-            // List to hold Student objects
-            List<User> std = new ArrayList<User>();
+            List<User> std = new ArrayList<>();
 
-            // Adding members to the list. Here we are
-            // using the parameterized constructor of
-            // class "Student.java"
             System.out.println("Забираем соединение");
-            DBManager dbManager_l=DBManager.getInstance();
+            DBManager dbManager_l = DBManager.getInstance();
 
             System.out.println("Забираем пользователей");
-            Map<Integer,User> usr = dbManager_l.getUsers();
+            List<User> usr = dbManager_l.getUsers();
             System.out.println("UserServlet 1");
-            Iterator it = usr.entrySet().iterator();
-            System.out.println("UserServlet 3");
-            while (it.hasNext())
-            {
-                System.out.println("UserServlet 3.1");
-                Map.Entry pair = (Map.Entry)it.next();
-                System.out.println("UserServlet 3.2");
-                std.add((User)pair.getValue());
-                System.out.println(((User)pair.getValue()).getLogin());
-            }
 
             System.out.println("UserServlet 4");
-            // Setting the attribute of the request object
-            // which will be later fetched by a JSP page
-            request.setAttribute("data", std);
+            request.setAttribute("data", usr);
 
-            // Creating a RequestDispatcher object to dispatch
-            // the request the request to another resource
             RequestDispatcher rd =
                     request.getRequestDispatcher("userRecord.jsp");
 
-            // The request will be forwarded to the resource
-            // specified, here the resource is a JSP named,
-            // "stdlist.jsp"
             rd.forward(request, response);
             out.println("</body>");
             out.println("</html>");
-        }
-        catch (SQLException _e)
-        {
-            System.out.println(_e.getErrorCode());
         }
     }
 
@@ -88,14 +65,61 @@ public class UserServlet extends HttpServlet
             HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        processRequest(request, response);
+        if (request.getParameterMap().isEmpty()) {
+            processRequest(request, response);
+        } else {
+            DBManager dbManager_l = DBManager.getInstance();
+            int u_id = Integer.parseInt(request.getParameter("user_id"));
+            User user_l = dbManager_l.findUser(u_id);
+            request.setAttribute("user", user_l);
+            response.setContentType("text/html;charset=UTF-8");
+            RequestDispatcher rdCur = request.getRequestDispatcher("editUserProfile.jsp");
+            rdCur.include(request, response);
+        }
     }
 
     @Override
     protected void doPost(
             HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        System.out.println(thisName + " 1");
+        try {
+            response.setContentType("text/html;charset=UTF-8");
+            request.setCharacterEncoding("UTF-8");
+            DBManager dbManager_l = DBManager.getInstance();
+            //Получаем все параметры
+            int _id = Integer.parseInt(request.getParameter("userID"));
+            String userFamilyName_l = request.getParameter("userFamily");
+            String userName_l = request.getParameter("userName");
+            String userFatherName = request.getParameter("userFather");
+            String userPassword = request.getParameter("userPassword");
+            String userEmail = request.getParameter("userEmail");
+            int role_id = Integer.parseInt(request.getParameter("userRole"));
+            Type userRole = dbManager_l.getRoleByID(role_id);
+            int language_id = Integer.parseInt(request.getParameter("userLanguage"));
+            Language userStandardLanguage = dbManager_l.getLanguageByID(language_id);
+            int currency_id = Integer.parseInt(request.getParameter("userCurrency"));
+            Currency userStandardCurrency = dbManager_l.getCurrencyByID(currency_id);
+            int reason_id = Integer.parseInt(request.getParameter("userBlocking"));
+            Reason userReason = dbManager_l.getReasonByID(reason_id);
+            //Пытаемся отправить в базу
+            User user_l = new User(_id, "", userPassword);
+            user_l.setFIO(userFamilyName_l, userName_l, userFatherName);
+            user_l.setPassword(userPassword);
+            user_l.setEmail(userEmail);
+            user_l.setRole(userRole);
+            user_l.setStandardLanguage(userStandardLanguage);
+            user_l.setStandardCurrency(userStandardCurrency);
+            user_l.block((reason_id != 0));
+            user_l.setBlockingReason((reason_id != 0), userReason);
+            boolean allOk = dbManager_l.updateUser(_id, user_l);
+            //И переходим обратно
+            response.sendRedirect(request.getContextPath() + HTMLLinks.USER_ADMINISTRATION);
+        } catch (IOException _e) {
+            System.out.println(thisName + " doPost " + LogMessages.ERROR_EXCEPTION + " " + _e.getMessage());
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
 
-        processRequest(request, response);
     }
 }

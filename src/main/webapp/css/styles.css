@@ -110,3 +110,8 @@ address {
 #mainContent{
     margin-top:50px;
 }
+.good_for_cart {
+  background-color: white;
+  color: black;
+  border:none;
+}

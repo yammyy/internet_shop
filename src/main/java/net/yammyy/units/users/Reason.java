@@ -1,13 +1,15 @@
 package net.yammyy.units.users;
 
-public class Reason
-{
+public class Reason {
     int id;
     String name;
-    public Reason (int _id, String _name)
-    {
-        id=_id;
-        name=_name;
+
+    public Reason(int id, String name) {
+        this.id = id;
+        this.name = name;
     }
-    public String getReason(){return name;}
+
+    public String getReason() {return name;}
+
+    public int getReasonID() {return id;}
 }

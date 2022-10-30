@@ -37,7 +37,7 @@
             <%=user.getRole().getName()%>
         </div>
         <div class="col-4">
-            <%=user.getBlockingReason().getReason()%>
+            <%=user.getLastBlockingReason().getReason()%>
         </div>
     </div>
     <div class="row">

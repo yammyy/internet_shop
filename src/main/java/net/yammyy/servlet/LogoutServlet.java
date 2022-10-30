@@ -9,26 +9,27 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-@WebServlet (
-        name = "LogoutServlet",
-        urlPatterns = "/*")
-public class LogoutServlet extends HttpServlet
-{
-        private static final String thisName="LogoutServlet";
-        private static final long serialVersionUID = 1L;
-        private void processRequest(HttpServletRequest _request,HttpServletResponse _response)
-        {
-            try
-            {
-                _request.getSession().invalidate();
-                _response.sendRedirect(_request.getContextPath()+HTMLLinks.HOME_PAGE_LINK);
-            }
-            catch (IOException _e)
-            {
-                System.out.println(thisName+" processRequest "+LogMessages.ERROR_EXCEPTION+" "+_e.getMessage());
-            }
+@WebServlet(name = "LogoutServlet", urlPatterns = "/logout")
+public class LogoutServlet extends HttpServlet {
+    private static final String thisName = "LogoutServlet";
+
+    private void processRequest(HttpServletRequest _request, HttpServletResponse _response) {
+        try {
+            _request.getSession().invalidate();
+            _response.sendRedirect(_request.getContextPath() + HTMLLinks.HOME_PAGE_LINK);
+        } catch (IOException _e) {
+            System.out.println(thisName + " processRequest " + LogMessages.ERROR_EXCEPTION + " " + _e.getMessage());
         }
-        @Override protected void doGet(HttpServletRequest _request, HttpServletResponse _response){processRequest(_request,_response);}
-        @Override protected void doPost(HttpServletRequest _request, HttpServletResponse _response){processRequest(_request,_response);}
+    }
+
+    @Override
+    protected void doGet(HttpServletRequest _request, HttpServletResponse _response) {
+        processRequest(_request, _response);
+    }
+
+    @Override
+    protected void doPost(HttpServletRequest _request, HttpServletResponse _response) {
+        processRequest(_request, _response);
+    }
 
 }

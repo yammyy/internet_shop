@@ -1,10 +1,13 @@
 package net.yammyy.units.goods;
 
-public interface ChoosableParameterValue
-{
+public interface ChoosableParameterValue {
     public int getID();
-    public void setID (int _id);
+
+    public void setID(int id);
+
     public String getValue();
-    public void setValue (String _value);
-    public void setParameter(int _id, String _value);
+
+    public void setValue(String value);
+
+    public void setParameter(int id, String value);
 }

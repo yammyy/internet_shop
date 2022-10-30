@@ -1,533 +1,1119 @@
 package net.yammyy.db;
 
-import java.io.File;
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.sql.*;
 import java.util.*;
+import java.util.Date;
 
 import net.yammyy.units.goods.*;
 import net.yammyy.units.goods.Currency;
+import net.yammyy.units.order.Order;
+import net.yammyy.units.order.Orders;
+import net.yammyy.units.order.Status;
 import net.yammyy.units.users.Reason;
 import net.yammyy.units.users.Type;
 import net.yammyy.units.users.User;
 
-public class DBManager
-{
-    public static final String SETTINGS_FILE = "config.properties";
-    public static Connection conn;
-    public static DBManager inst;
-    private Map<Integer,ChoosableParameterValue> categories;
-    private Map<Integer,ChoosableParameterValue> colors;
-    private Map<Integer,ChoosableParameterValue> brands;
-    private Map<Integer,Parameter> params;
-    private Map<Integer, Type> roles;
-    private Map<Integer, Reason> blocking_reasons;
-    private Map<Integer, User> users;
-    private Map<Integer, Language> languages;
-    private Map<Integer, Currency> currencies;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.sql.DataSource;
 
-    public static synchronized DBManager getInstance() throws IOException, SQLException
-    {
-        System.out.println("getInstance Main");
-        if (inst==null)
-        {
+class DBGeneral {
+    private Map<Integer, Language> languageMap;
+    private Map<Integer, Currency> currencyMap;
+
+    void initializeDBGeneral(Connection connection) throws SQLException {
+        initializeLanguages(connection);
+        initializeCurrencies(connection);
+    }
+
+    private void initializeCurrencies(Connection connection) throws SQLException {
+        String thisName = "initializeCurrencies";
+        currencyMap = new TreeMap<>();
+        String sql = "SELECT * FROM " + GoodsFields.CURRENCY_TABLE;
+        System.out.println(thisName + LogMessages.SQL_CODE + sql);
+        ResultSet resultSet = null;
+        Statement statement = null;
+        try {
+            statement = connection.createStatement();
+            resultSet = statement.executeQuery(sql);
+            System.out.println(thisName + LogMessages.SQL_EXECUTE);
+            while (resultSet.next()) {
+                int currencyID = resultSet.getInt(GoodsFields.CURRENCY_ID);
+                Currency oneCurrency = new Currency(currencyID, resultSet.getString(GoodsFields.CURRENCY_NAME),
+                        resultSet.getString(GoodsFields.CURRENCY_ABBR));
+                currencyMap.put(currencyID, oneCurrency);
+            }
+            System.out.println(thisName + LogMessages.SQL_SUCCESS);
+        } catch (SQLException _e) {
+            System.out.println(thisName + LogMessages.SQL_ERROR + _e.getErrorCode() + " | " + _e.getSQLState());
+        } finally {
+            if (resultSet != null) {
+                resultSet.close();
+            }
+            if (statement != null) {
+                statement.close();
+            }
+        }
+        System.out.println(thisName + LogMessages.END_PROCEDURE);
+    }
+
+    private void initializeLanguages(Connection connection) throws SQLException {
+        String thisName = "initializeLanguages";
+        System.out.println(thisName + LogMessages.START_PROCEDURE);
+        languageMap = new TreeMap<>();
+        String sql = "SELECT * FROM " + GoodsFields.LANGUAGE_TABLE;
+        ResultSet resultSet = null;
+        Statement statement = null;
+        try {
+            System.out.println(thisName + LogMessages.SQL_CODE + sql);
+            statement = connection.createStatement();
+            resultSet = statement.executeQuery(sql);
+            System.out.println(thisName + LogMessages.SQL_EXECUTE);
+            while (resultSet.next()) {
+                int id_l = resultSet.getInt(GoodsFields.LANGUAGE_ID);
+                Language language_l = new Language(id_l, resultSet.getString(GoodsFields.LANGUAGE_NAME),
+                        resultSet.getString(GoodsFields.LANGUAGE_ABBR));
+                languageMap.put(id_l, language_l);
+            }
+            System.out.println(thisName + LogMessages.SQL_SUCCESS);
+        } catch (SQLException _e) {
+            System.out.println(thisName + LogMessages.SQL_ERROR + _e.getSQLState() + " " + _e.getErrorCode());
+        } finally {
+            if (resultSet != null) {
+                resultSet.close();
+            }
+            if (statement != null) {
+                statement.close();
+            }
+        }
+        System.out.println(thisName + LogMessages.END_PROCEDURE);
+    }
+
+    List<Language> getLanguages() {
+        return new ArrayList<>(languageMap.values());
+    }
+
+    List<Currency> getCurrencies() {
+        return new ArrayList<>(currencyMap.values());
+    }
+
+    Language getLanguageByID(int _id) {
+        return languageMap.get(_id);
+    }
+
+    Currency getCurrencyByID(int _id) {
+        return currencyMap.get(_id);
+    }
+}
+
+class DBGoods {
+    private Map<Integer, ChoosableParameterValue> categoryMap;
+    private Map<Integer, ChoosableParameterValue> colorMap;
+    private Map<Integer, ChoosableParameterValue> brandMap;
+    private Map<Integer, Parameter> parameterMap;
+    private Map<Integer, Good> goodMap;
+
+    void initializeDBGoods(Connection connection) throws SQLException {
+        initializeCategories(connection);
+        initializeColors(connection);
+        initializeBrands(connection);
+        initializeOtherParameters(connection);
+        initializeGoods(connection);
+    }
+
+    private void initializeGoods(Connection connection) throws SQLException {
+        String thisName = "initializeGoods";
+        System.out.println(thisName + LogMessages.START_PROCEDURE);
+        String sql = "SELECT * FROM " + GoodsFields.GOODS_TABLE + " WHERE " + GoodsFields.GOOD_ALREADY_SOLD + " <> ?";
+        System.out.println(thisName + LogMessages.SQL_CODE + sql);
+        PreparedStatement preparedStatement = null;
+        ResultSet resultSet = null;
+        goodMap = new TreeMap<>();
+        try {
+            preparedStatement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            preparedStatement.setInt(1, 0);
+            resultSet = preparedStatement.executeQuery();
+            System.out.println(thisName + LogMessages.SQL_EXECUTE);
+            while (resultSet.next()) {
+                int entityId = resultSet.getInt(GoodsFields.GOOD_ID);
+                Good good = new Good(entityId, resultSet.getString(GoodsFields.GOOD_NAME));
+                good.setDescription(resultSet.getString(GoodsFields.GOOD_DESCRIPTION));
+                good.setPrice(resultSet.getFloat(GoodsFields.GOOD_PRICE));
+                good.setDateWhenAdded(new Date(resultSet.getDate(GoodsFields.GOOD_DATE_WHEN_ADDED).getTime()));
+                goodMap.put(entityId, good);
+            }
+            System.out.println(thisName + LogMessages.SQL_SUCCESS);
+        } catch (SQLException e) {
+            System.out.println(thisName + LogMessages.SQL_ERROR + e.getErrorCode() + " | " + e.getSQLState());
+        } finally {
+            if (resultSet != null) {
+                resultSet.close();
+            }
+            if (preparedStatement != null) {
+                preparedStatement.close();
+            }
+        }
+        System.out.println(thisName + " join parameters from another table");
+        setGoodsParameters(connection);
+        System.out.println(thisName + LogMessages.END_PROCEDURE);
+    }
+
+    private void setGoodsParameters(Connection connection) throws SQLException {
+        String thisName = "setGoodsParameters";
+        System.out.println(thisName + LogMessages.START_PROCEDURE);
+        String sql = "SELECT t1.*,t2." + GoodsFields.PARAMETER_TYPE_OUTER + " FROM " + GoodsFields.PARAMETER_TABLE +
+                " t1 join " + GoodsFields.PARAMETER_TYPE_TABLE + " t2 on t1.type=t2.id";
+        System.out.println(thisName + LogMessages.SQL_CODE + sql);
+        Statement statement = null;
+        ResultSet resultSet = null;
+        try {
+            statement = connection.createStatement();
+            resultSet = statement.executeQuery(sql);
+            System.out.println(thisName + LogMessages.SQL_EXECUTE);
+            while (resultSet.next()) {
+                int goodId = resultSet.getInt(GoodsFields.PARAMETER_ID);
+                Good good = goodMap.get(goodId);
+                int paramId = resultSet.getInt(GoodsFields.PARAMETER_TYPE);
+                if (paramId == 5) {
+                    good.addCategory(categoryMap.get(resultSet.getInt(GoodsFields.PARAMETER_VALUE)));
+                } else {
+                    GoodParameter goodParameter;
+                    if (resultSet.getString(GoodsFields.PARAMETER_TYPE_OUTER).length() > 0) {
+                        goodParameter = new GoodChoosableParameter();
+                        goodParameter.setParameter(parameterMap.get(paramId),
+                                resultSet.getInt(GoodsFields.PARAMETER_VALUE));
+                    } else {
+                        goodParameter = new GoodNonChoosableParameter();
+                        goodParameter.setParameter(parameterMap.get(paramId),
+                                resultSet.getDouble(GoodsFields.PARAMETER_VALUE));
+                    }
+                    good.setParam(goodParameter);
+                }
+            }
+            System.out.println(thisName + LogMessages.SQL_SUCCESS);
+        } catch (SQLException e) {
+            System.out.println(thisName + LogMessages.SQL_ERROR + e.getErrorCode() + " | " + e.getSQLState());
+        } finally {
+            if (resultSet != null) {
+                resultSet.close();
+            }
+            if (statement != null) {
+                statement.close();
+            }
+        }
+        System.out.println(thisName + LogMessages.END_PROCEDURE);
+    }
+
+    private <T extends ChoosableParameterValue> void initializeChoosableParameterValues(Connection connection,
+                                                                                        Class<T> type,
+                                                                                        String tableName,
+                                                                                        String fieldID,
+                                                                                        String fieldValue) throws SQLException {
+        String thisName = "initialize" + type.getSimpleName();
+        System.out.println(thisName + LogMessages.START_PROCEDURE);
+        Map<Integer, ChoosableParameterValue> parametersMap = null;
+        if (type == Category.class) {
+            categoryMap = new TreeMap<>();
+            parametersMap = categoryMap;
+        } else if (type == Color.class) {
+            colorMap = new TreeMap<>();
+            parametersMap = colorMap;
+        } else if (type == Brand.class) {
+            brandMap = new TreeMap<>();
+            parametersMap = brandMap;
+        }
+        System.out.println(thisName + " Get storage that needed");
+        String sql = "SELECT * FROM " + tableName;
+        System.out.println(thisName + LogMessages.SQL_CODE + sql);
+        Statement statement = null;
+        ResultSet resultSet = null;
+        try {
+            statement = connection.createStatement();
+            resultSet = statement.executeQuery(sql);
+            System.out.println(thisName + LogMessages.SQL_EXECUTE);
+            while (resultSet.next()) {
+                ChoosableParameterValue oneParameter = type.getDeclaredConstructor().newInstance();
+                oneParameter.setParameter(resultSet.getInt(fieldID), resultSet.getString(fieldValue));
+                parametersMap.put(resultSet.getInt(fieldID), oneParameter);
+            }
+            System.out.println(thisName + LogMessages.SQL_SUCCESS);
+        } catch (InvocationTargetException | InstantiationException | IllegalAccessException |
+                 NoSuchMethodException e) {
+            System.out.println(thisName + LogMessages.ERROR_MESSAGE + e.getMessage());
+        } catch (SQLException e) {
+            System.out.println(thisName + LogMessages.SQL_ERROR + e.getErrorCode() + " | " + e.getSQLState());
+        } finally {
+            if (resultSet != null) {
+                resultSet.close();
+            }
+            if (statement != null) {
+                statement.close();
+            }
+        }
+        System.out.println(thisName + LogMessages.END_PROCEDURE);
+    }
+
+    private void initializeBrands(Connection connection) throws SQLException {
+        initializeChoosableParameterValues(connection, Category.class, GoodsFields.CATEGORY_TABLE,
+                GoodsFields.CATEGORY_ID, GoodsFields.CATEGORY_NAME);
+    }
+
+    private void initializeColors(Connection connection) throws SQLException {
+        initializeChoosableParameterValues(connection, Color.class, GoodsFields.COLOR_TABLE, GoodsFields.COLOR_ID,
+                GoodsFields.COLOR_NAME);
+    }
+
+    private void initializeCategories(Connection connection) throws SQLException {
+        initializeChoosableParameterValues(connection, Category.class, GoodsFields.CATEGORY_TABLE,
+                GoodsFields.CATEGORY_ID, GoodsFields.CATEGORY_NAME);
+    }
+
+    private void initializeOtherParameters(Connection connection) throws SQLException {
+        String thisName = "initializeNonChoosableParameters";
+        System.out.println(thisName + LogMessages.START_PROCEDURE);
+        parameterMap = new TreeMap<>();
+        String sql = "SELECT * FROM " + GoodsFields.PARAMETER_TYPE_TABLE;
+        System.out.println(thisName + LogMessages.SQL_CODE + sql);
+        Statement statement = null;
+        ResultSet resultSet = null;
+        try {
+            statement = connection.createStatement();
+            resultSet = statement.executeQuery(sql);
+            System.out.println(thisName + LogMessages.SQL_EXECUTE);
+            while (resultSet.next()) {
+                Parameter parameter = new Parameter();
+                parameter.setParameter(resultSet.getInt(GoodsFields.PARAMETER_TYPE_ID),
+                        resultSet.getString(GoodsFields.PARAMETER_TYPE_NAME));
+                parameterMap.put(resultSet.getInt(GoodsFields.PARAMETER_TYPE_ID), parameter);
+            }
+            System.out.println(thisName + LogMessages.SQL_SUCCESS);
+        } catch (SQLException e) {
+            System.out.println(thisName + LogMessages.SQL_ERROR + e.getErrorCode() + " | " + e.getSQLState());
+        } finally {
+            if (resultSet != null) {
+                resultSet.close();
+            }
+            if (statement != null) {
+                statement.close();
+            }
+        }
+        System.out.println(thisName + LogMessages.END_PROCEDURE);
+    }
+
+    List<ChoosableParameterValue> getAllCategories() {
+        return new ArrayList<>(categoryMap.values());
+    }
+
+    List<ChoosableParameterValue> getAllColors() {
+        return new ArrayList<>(categoryMap.values());
+    }
+
+    List<ChoosableParameterValue> getAllBrands() {
+        return new ArrayList<>(brandMap.values());
+    }
+
+    List<Parameter> getAllParameters() {
+        return new ArrayList<>(parameterMap.values());
+    }
+
+    List<Good> getAllGoods() {
+        return new ArrayList<>(goodMap.values());
+    }
+
+    List<Good> getGoodByCategory(int categoryID) {
+        List<Good> result = new ArrayList<>();
+        Iterator entryIterator = goodMap.entrySet().iterator();
+        while (entryIterator.hasNext()) {
+            Map.Entry entry = (Map.Entry) entryIterator.next();
+            if (((Good) entry.getValue()).hasCategory(categoryID)) {
+                result.add((Good) entry.getValue());
+            }
+        }
+        return result;
+    }
+
+    List<Good> getGoodByParameter(int parameterID) {
+        List<Good> result = new ArrayList<>();
+        Iterator entryIterator = goodMap.entrySet().iterator();
+        while (entryIterator.hasNext()) {
+            Map.Entry entry = (Map.Entry) entryIterator.next();
+            if (((Good) entry.getValue()).hasCategory(parameterID)) {
+                result.add((Good) entry.getValue());
+            }
+        }
+        return result;
+    }
+
+    List<Good> getGoodByParameters(int parameterId, int value) {
+        return null;
+    }
+
+    Good getGoodByID(int id) {
+        return goodMap.get(id);
+    }
+
+    public boolean insertNewGoodToList(Connection connection, int userId, int orderId, int goodID, int quantity) throws SQLException {
+        String thisName = "insertGoodToCart";
+        System.out.println(thisName + LogMessages.START_PROCEDURE);
+        PreparedStatement preparedStatement = null;
+        boolean result = false;
+        try {
+            System.out.println(thisName + LogMessages.START_TRANSACTION);
+            connection.setAutoCommit(false);
+            int iso_l = connection.getTransactionIsolation();
+            connection.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
+            String sql = "INSERT IGNORE INTO " + OrdersFields.ORDERS_TABLE + " (" + OrdersFields.ORDERS_ORDER_ID + ","
+                    + " " + OrdersFields.ORDERS_USER_ID + ", " + OrdersFields.ORDERS_DELIVERY_TYPE + ") VALUES (?, ?,"
+                    + " ?);";
+            System.out.println(thisName + LogMessages.SQL_CODE + sql);
+            preparedStatement = connection.prepareStatement(sql);
+            preparedStatement.setInt(1, orderId);
+            preparedStatement.setInt(2, userId);
+            preparedStatement.setInt(3, 0);
+            preparedStatement.executeUpdate();
+            System.out.println(thisName + LogMessages.SQL_EXECUTE);
+            sql = "INSERT INTO " + OrdersFields.ORDER_LIST_TABLE + "(" + OrdersFields.ORDER_LIST_USER_ID + ", " + OrdersFields.ORDER_LIST_ORDER_ID + ", " + OrdersFields.ORDER_LIST_GOOD_ID + ", " + OrdersFields.ORDER_LIST_QUANTITY + ") VALUES (?,?,?,?);";
+            System.out.println(thisName + LogMessages.SQL_CODE + sql);
+            PreparedStatement sta2 = connection.prepareStatement(sql);
+            sta2.setInt(1, userId);
+            sta2.setInt(2, orderId);
+            sta2.setInt(3, goodID);
+            sta2.setInt(4, quantity);
+            sta2.executeUpdate();
+            System.out.println(thisName + LogMessages.SQL_EXECUTE);
+            connection.commit();
+            connection.setAutoCommit(false);
+            connection.setTransactionIsolation(iso_l);
+            result = true;
+        } catch (SQLException _e) {
+            System.out.println(thisName + LogMessages.SQL_ERROR + _e.getErrorCode() + " | " + _e.getSQLState());
+            connection.rollback();
+        } finally {
+            if (preparedStatement != null) {
+                preparedStatement.close();
+            }
+        }
+        return result;
+    }
+
+    public boolean deleteGoodFromList(Connection connection, int userId, int orderId, int goodID) throws SQLException {
+        String thisName = "deleteGoodFromCart";
+        System.out.println(thisName + LogMessages.START_PROCEDURE);
+        String sql = "DELETE FROM " + OrdersFields.ORDER_LIST_TABLE + " WHERE " + OrdersFields.ORDER_LIST_USER_ID +
+                "=? and " + OrdersFields.ORDER_LIST_ORDER_ID + "=? and " + OrdersFields.ORDER_LIST_GOOD_ID + "=?;";
+        PreparedStatement preparedStatement = null;
+        boolean result = false;
+        try {
+            System.out.println(thisName + LogMessages.SQL_CODE + sql);
+            preparedStatement = connection.prepareStatement(sql);
+            preparedStatement.setInt(1, userId);
+            preparedStatement.setInt(2, orderId);
+            preparedStatement.setInt(3, goodID);
+            preparedStatement.executeUpdate();
+            System.out.println(thisName + LogMessages.SQL_EXECUTE);
+            result = true;
+        } catch (SQLException _e) {
+            System.out.println(thisName + LogMessages.SQL_ERROR + _e.getErrorCode() + " | " + _e.getSQLState());
+        } finally {
+            if (preparedStatement != null) {
+                preparedStatement.close();
+            }
+        }
+        return result;
+    }
+
+    public boolean updateGoodInList(Connection connection, int userId, int orderId, int goodID, int newQuantity) throws SQLException {
+        String thisName = "updateGoodInCart";
+        System.out.println(thisName + LogMessages.START_PROCEDURE);
+        String sql =
+                "UPDATE " + OrdersFields.ORDER_LIST_TABLE + " SET " + OrdersFields.ORDER_LIST_QUANTITY + "=? " +
+                        "WHERE " + OrdersFields.ORDER_LIST_USER_ID + "=? and " + OrdersFields.ORDER_LIST_ORDER_ID +
+                        "=? and " + OrdersFields.ORDER_LIST_GOOD_ID + "=?;";
+        PreparedStatement preparedStatement = null;
+        boolean result = false;
+        try {
+            System.out.println(thisName + LogMessages.SQL_CODE + sql);
+            preparedStatement = connection.prepareStatement(sql);
+            preparedStatement.setInt(1, newQuantity);
+            preparedStatement.setInt(2, userId);
+            preparedStatement.setInt(3, orderId);
+            preparedStatement.setInt(4, goodID);
+            preparedStatement.executeUpdate();
+            System.out.println(thisName + LogMessages.SQL_EXECUTE);
+            result = true;
+        } catch (SQLException _e) {
+            System.out.println(thisName + LogMessages.SQL_ERROR + _e.getErrorCode() + " | " + _e.getSQLState());
+        } finally {
+            if (preparedStatement != null) {
+                preparedStatement.close();
+            }
+        }
+        return result;
+    }
+
+    public boolean updateGoodsInList(Connection connection, int loginedUserId, int orderId, int newOrderID,
+                                     Date date) throws SQLException {
+        String thisName = "updateGoodsInList";
+        System.out.println(thisName + LogMessages.START_PROCEDURE);
+        PreparedStatement preparedStatement = null;
+        boolean result = false;
+        try {
+            System.out.println(thisName + LogMessages.START_TRANSACTION);
+            connection.setAutoCommit(false);
+            int iso_l = connection.getTransactionIsolation();
+            connection.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
+            String sql = "INSERT IGNORE INTO " + OrdersFields.ORDERS_TABLE + " (" + OrdersFields.ORDERS_ORDER_ID + ","
+                    + " " + OrdersFields.ORDERS_USER_ID + ", " + OrdersFields.ORDERS_DELIVERY_TYPE + ") VALUES (?, ?,"
+                    + " ?);";
+            System.out.println(thisName + LogMessages.SQL_CODE + sql + " " + newOrderID);
+            preparedStatement = connection.prepareStatement(sql);
+            preparedStatement.setInt(1, newOrderID);
+            preparedStatement.setInt(2, loginedUserId);
+            preparedStatement.setInt(3, 0);
+            preparedStatement.executeUpdate();
+            System.out.println(thisName + LogMessages.SQL_EXECUTE);
+            sql = "UPDATE " + OrdersFields.ORDER_LIST_TABLE + " SET " + OrdersFields.ORDER_LIST_ORDER_ID + "=? " +
+                    "WHERE " + OrdersFields.ORDER_LIST_USER_ID + "=? and " + OrdersFields.ORDER_LIST_ORDER_ID + "=?;";
+            System.out.println(thisName + LogMessages.SQL_CODE + sql + newOrderID + " " + loginedUserId + " " + orderId);
+            PreparedStatement sta2 = connection.prepareStatement(sql);
+            sta2.setInt(1, newOrderID);
+            sta2.setInt(2, loginedUserId);
+            sta2.setInt(3, orderId);
+            sta2.executeUpdate();
+            System.out.println(thisName + LogMessages.SQL_EXECUTE);
+            sql = "INSERT INTO " + OrdersFields.ORDER_STATUSES_TABLE + " (" + OrdersFields.ORDER_STATUSES_ORDER_ID + ","
+                    + " " + OrdersFields.ORDER_STATUSES_USER_ID + ", " + OrdersFields.ORDER_STATUSES_STATUS_ID + ", " +
+                    OrdersFields.ORDER_STATUSES_DATE_GET + ") VALUES (?, ?,"
+                    + " ?, ?);";
+            System.out.println(thisName + LogMessages.SQL_CODE + sql + " " + newOrderID);
+            preparedStatement = connection.prepareStatement(sql);
+            preparedStatement.setInt(1, newOrderID);
+            preparedStatement.setInt(2, loginedUserId);
+            preparedStatement.setInt(3, 1);
+            preparedStatement.setDate(3, (java.sql.Date) date);
+            preparedStatement.executeUpdate();
+            System.out.println(thisName + LogMessages.SQL_EXECUTE);
+            connection.commit();
+            connection.setAutoCommit(false);
+            connection.setTransactionIsolation(iso_l);
+            result = true;
+        } catch (SQLException _e) {
+            System.out.println(thisName + LogMessages.SQL_ERROR + _e.getErrorCode() + " | " + _e.getSQLState());
+            connection.rollback();
+        } finally {
+            if (preparedStatement != null) {
+                preparedStatement.close();
+            }
+        }
+        return result;
+    }
+
+    public boolean insertNewGoodToList(Connection connection, int userId, int orderId, List<Order> orderList) throws SQLException {
+        String thisName = "insertNewGoodToList";
+        System.out.println(thisName + LogMessages.START_PROCEDURE);
+        PreparedStatement preparedStatement = null;
+        boolean result = false;
+        try {
+            System.out.println(thisName + LogMessages.START_TRANSACTION);
+            connection.setAutoCommit(false);
+            int iso_l = connection.getTransactionIsolation();
+            connection.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
+            String sql = "INSERT IGNORE INTO " + OrdersFields.ORDERS_TABLE + " (" + OrdersFields.ORDERS_ORDER_ID + ","
+                    + " " + OrdersFields.ORDERS_USER_ID + ", " + OrdersFields.ORDERS_DELIVERY_TYPE + ") VALUES (?, ?,"
+                    + " ?);";
+            System.out.println(thisName + LogMessages.SQL_CODE + sql);
+            preparedStatement = connection.prepareStatement(sql);
+            preparedStatement.setInt(1, orderId);
+            preparedStatement.setInt(2, userId);
+            preparedStatement.setInt(3, 0);
+            preparedStatement.executeUpdate();
+            for (int i = 0; i < orderList.size(); i++) {
+                sql = "DELETE FROM " + OrdersFields.ORDER_LIST_TABLE + " WHERE " + OrdersFields.ORDER_LIST_ORDER_ID +
+                        "=? and " + OrdersFields.ORDER_LIST_USER_ID + "=? and " + OrdersFields.ORDER_LIST_GOOD_ID +
+                        "=?;";
+                System.out.println(thisName + LogMessages.SQL_CODE + sql);
+                preparedStatement = connection.prepareStatement(sql);
+                preparedStatement.setInt(1, orderId);
+                preparedStatement.setInt(2, userId);
+                preparedStatement.setInt(3, orderList.get(i).getGood().getID());
+                preparedStatement.executeUpdate();
+                sql = "INSERT IGNORE INTO " + OrdersFields.ORDER_LIST_TABLE + " ( " + OrdersFields.ORDER_LIST_ORDER_ID +
+                        ", " + OrdersFields.ORDER_LIST_USER_ID + ", " + OrdersFields.ORDER_LIST_GOOD_ID + ", " +
+                        OrdersFields.ORDER_LIST_QUANTITY + ") VALUES (?, ?, ?, ?);";
+                System.out.println(thisName + LogMessages.SQL_CODE + sql);
+                preparedStatement = connection.prepareStatement(sql);
+                preparedStatement.setInt(1, orderId);
+                preparedStatement.setInt(2, userId);
+                preparedStatement.setInt(3, orderList.get(i).getGood().getID());
+                preparedStatement.setInt(4, orderList.get(i).getQuantity());
+                preparedStatement.executeUpdate();
+            }
+            System.out.println(thisName + LogMessages.SQL_EXECUTE);
+            connection.commit();
+            connection.setAutoCommit(false);
+            connection.setTransactionIsolation(iso_l);
+            result = true;
+        } catch (SQLException _e) {
+            System.out.println(thisName + LogMessages.SQL_ERROR + _e.getErrorCode() + " | " + _e.getSQLState());
+            connection.rollback();
+        } finally {
+            if (preparedStatement != null) {
+                preparedStatement.close();
+            }
+        }
+        return result;
+    }
+
+}
+
+class DBUsers {
+    private Map<Integer, Type> roleMap;
+    private Map<Integer, Reason> blockingReasonMap;
+    private Map<Integer, User> userMap;
+    private Map<Integer, Status> statusMap;
+
+    void initializeDBUsers(Connection connection, DBGeneral dbGeneral, DBGoods dbGoods) throws SQLException {
+        initializeBlockingReasons(connection);
+        initializeUserRoles(connection);
+        initializeStatuses(connection);
+        initializeUsers(connection, dbGeneral, dbGoods);
+    }
+
+    private void initializeStatuses(Connection connection) throws SQLException {
+        String thisName = "initializeStatuses";
+        System.out.println(thisName + LogMessages.START_PROCEDURE);
+        statusMap = new TreeMap<>();
+        String sql = "SELECT * FROM " + OrdersFields.STATUSES_TABLE;
+        System.out.println(thisName + LogMessages.SQL_CODE + sql);
+        Statement statement = null;
+        ResultSet resultSet = null;
+        try {
+            statement = connection.createStatement();
+            resultSet = statement.executeQuery(sql);
+            System.out.println(thisName + LogMessages.SQL_EXECUTE);
+            while (resultSet.next()) {
+                int statusID = resultSet.getInt(OrdersFields.STATUSES_ID);
+                Status status = new Status(statusID, resultSet.getString(OrdersFields.STATUSES_DESCRIPTION));
+                statusMap.put(statusID, status);
+            }
+            System.out.println(thisName + LogMessages.SQL_SUCCESS);
+        } catch (SQLException e) {
+            System.out.println(thisName + LogMessages.SQL_ERROR + e.getErrorCode() + " | " + e.getSQLState());
+        } finally {
+            if (resultSet != null) {
+                resultSet.close();
+            }
+            if (statement != null) {
+                statement.close();
+            }
+        }
+        System.out.println(thisName + LogMessages.END_PROCEDURE);
+    }
+
+    private void initializeUserRoles(Connection connection) throws SQLException {
+        String thisName = "initializeUserRoles";
+        System.out.println(thisName + LogMessages.START_PROCEDURE);
+        roleMap = new TreeMap<>();
+        String sql = "SELECT * FROM " + UsersFields.ROLES_TABLE;
+        System.out.println(thisName + LogMessages.SQL_CODE + sql);
+        Statement statement = null;
+        ResultSet resultSet = null;
+        try {
+            statement = connection.createStatement();
+            resultSet = statement.executeQuery(sql);
+            System.out.println(thisName + LogMessages.SQL_EXECUTE);
+            while (resultSet.next()) {
+                int roleID = resultSet.getInt(UsersFields.ROLES_ID);
+                Type role = new Type(roleID, resultSet.getString(UsersFields.ROLES_NAME));
+                roleMap.put(roleID, role);
+            }
+            System.out.println(thisName + LogMessages.SQL_SUCCESS);
+        } catch (SQLException e) {
+            System.out.println(thisName + LogMessages.SQL_ERROR + e.getErrorCode() + " | " + e.getSQLState());
+        } finally {
+            if (resultSet != null) {
+                resultSet.close();
+            }
+            if (statement != null) {
+                statement.close();
+            }
+        }
+        setSecureLinks(connection);
+        System.out.println(thisName + LogMessages.END_PROCEDURE);
+    }
+
+    private void setSecureLinks(Connection connection) throws SQLException {
+        String thisName = "getSecureURLs";
+        System.out.println(thisName + LogMessages.START_PROCEDURE);
+        String sql = "SELECT * FROM " + UsersFields.SECURE_URLS_TABLE;
+        System.out.println(thisName + LogMessages.SQL_CODE + sql);
+        Statement statement = null;
+        ResultSet resultSet = null;
+        try {
+            statement = connection.createStatement();
+            resultSet = statement.executeQuery(sql);
+            System.out.println(thisName + LogMessages.SQL_EXECUTE);
+            while (resultSet.next()) {
+                int roleId = resultSet.getInt(UsersFields.SECURE_URLS_ROLE_ID);
+                Type role = roleMap.get(roleId);
+                role.addURL(resultSet.getString(UsersFields.SECURE_URLS_URL));
+            }
+            System.out.println(thisName + LogMessages.END_PROCEDURE);
+        } catch (SQLException e) {
+            System.out.println(thisName + LogMessages.SQL_ERROR + e.getErrorCode() + " | " + e.getSQLState());
+        } finally {
+            if (resultSet != null) {
+                resultSet.close();
+            }
+            if (statement != null) {
+                statement.close();
+            }
+        }
+        System.out.println(thisName + LogMessages.END_PROCEDURE);
+    }
+
+    private void initializeBlockingReasons(Connection connection) throws SQLException {
+        String thisName = "initializeReasons";
+        System.out.println(thisName + LogMessages.START_PROCEDURE);
+        blockingReasonMap = new TreeMap<>();
+        String sql = "SELECT * FROM " + UsersFields.BLOCKED_TABLE;
+        System.out.println(thisName + LogMessages.SQL_CODE + sql);
+        Statement statement = null;
+        ResultSet resultSet = null;
+        try {
+            statement = connection.createStatement();
+            resultSet = statement.executeQuery(sql);
+            System.out.println(thisName + LogMessages.SQL_EXECUTE);
+            while (resultSet.next()) {
+                int reasonID = resultSet.getInt(UsersFields.BLOCKED_REASON_ID);
+                Reason reason = new Reason(reasonID, resultSet.getString(UsersFields.BLOCKED_REASON_NAME));
+                blockingReasonMap.put(reasonID, reason);
+            }
+            System.out.println(thisName + LogMessages.SQL_SUCCESS);
+        } catch (SQLException e) {
+            System.out.println(thisName + LogMessages.SQL_ERROR + e.getErrorCode() + " | " + e.getSQLState());
+        } finally {
+            if (resultSet != null) {
+                resultSet.close();
+            }
+            if (statement != null) {
+                statement.close();
+            }
+        }
+        System.out.println(thisName + LogMessages.END_PROCEDURE);
+    }
+
+    private void initializeUsers(Connection connection, DBGeneral dbGeneral, DBGoods dbGoods) throws SQLException {
+        String thisName = "initializeUsers";
+        System.out.println(thisName + LogMessages.START_PROCEDURE);
+        userMap = new TreeMap<>();
+        String sql = "SELECT * FROM " + UsersFields.USERS_TABLE;
+        System.out.println(thisName + LogMessages.SQL_CODE + sql);
+        ResultSet resultSet = null;
+        Statement statement = null;
+        try {
+            statement = connection.createStatement();
+            resultSet = statement.executeQuery(sql);
+            System.out.println(thisName + LogMessages.SQL_EXECUTE);
+            while (resultSet.next()) {
+                int userId = resultSet.getInt(UsersFields.USERS_ID);
+                User user = new User(userId, resultSet.getString(UsersFields.USERS_LOGIN),
+                        resultSet.getString(UsersFields.USERS_PASSWORD),
+                        resultSet.getDate(UsersFields.USERS_REGISTRATION_DATE));
+                user.setFIO(resultSet.getString(UsersFields.USERS_FAMILY_NAME),
+                        resultSet.getString(UsersFields.USERS_NAME),
+                        resultSet.getString(UsersFields.USERS_FATHER_NAME));
+                user.setEmail(resultSet.getString(UsersFields.USERS_EMAIL));
+                Type role = roleMap.get(resultSet.getInt(UsersFields.USERS_ROLE));
+                user.setRole(role);
+                boolean userBlocked = resultSet.getBoolean(UsersFields.USERS_BLOCKED);
+                user.block(userBlocked);
+                Language userLanguage =
+                        dbGeneral.getLanguages().get(resultSet.getInt(UsersFields.USERS_STANDARD_LANGUAGE));
+                user.setStandardLanguage(userLanguage);
+                Currency userCurrency =
+                        dbGeneral.getCurrencies().get(resultSet.getInt(UsersFields.USERS_STANDARD_CURRENCY));
+                user.setStandardCurrency(userCurrency);
+                userMap.put(userId, user);
+            }
+            System.out.println(thisName + LogMessages.SQL_SUCCESS);
+        } catch (SQLException e) {
+            System.out.println(thisName + LogMessages.SQL_ERROR + e.getErrorCode() + " | " + e.getSQLState());
+        } finally {
+            if (resultSet != null) {
+                resultSet.close();
+            }
+            if (statement != null) {
+                statement.close();
+            }
+        }
+        System.out.println(thisName + "join blocking from blocking table");
+        setUserBlocking(connection);
+        System.out.println(thisName + "join orders from orders table");
+        setUserOrders(connection, dbGoods);
+        System.out.println(thisName + LogMessages.END_PROCEDURE);
+    }
+
+    private void setUserOrders(Connection connection, DBGoods dbGoods) throws SQLException {
+        String thisName = "setUserOrders";
+        System.out.println(thisName + LogMessages.START_PROCEDURE);
+        String sql = "SELECT * FROM " + OrdersFields.ORDERS_TABLE;
+        System.out.println(thisName + LogMessages.SQL_CODE);
+        Statement statement = null;
+        ResultSet resultSet = null;
+        try {
+            statement = connection.createStatement();
+            resultSet = statement.executeQuery(sql);
+            System.out.println(thisName + LogMessages.SQL_EXECUTE);
+            while (resultSet.next()) {
+                int userID = resultSet.getInt(OrdersFields.ORDERS_USER_ID);
+                User user = userMap.get(userID);
+                int orderID = resultSet.getInt(OrdersFields.ORDERS_ORDER_ID);
+                user.addNewOrder(new Orders(orderID), orderID);
+            }
+        } catch (SQLException e) {
+            System.out.println(thisName + LogMessages.SQL_ERROR + e.getErrorCode() + " | " + e.getSQLState());
+        } finally {
+            if (resultSet != null) {
+                resultSet.close();
+            }
+            if (statement != null) {
+                statement.close();
+            }
+        }
+        setOrdersGoods(connection, dbGoods);
+        setOrderStatuses(connection);
+        System.out.println(thisName + LogMessages.END_PROCEDURE);
+    }
+
+    private void setOrderStatuses(Connection connection) throws SQLException {
+        String thisName = "setOrderStatuses";
+        System.out.println(thisName + LogMessages.START_PROCEDURE);
+        String sql = "SELECT * FROM " + OrdersFields.ORDER_STATUSES_TABLE;
+        System.out.println(thisName + LogMessages.SQL_CODE);
+        Statement statement = null;
+        ResultSet resultSet = null;
+        try {
+            statement = connection.createStatement();
+            resultSet = statement.executeQuery(sql);
+            System.out.println(thisName + LogMessages.SQL_EXECUTE);
+            while (resultSet.next()) {
+                int userID = resultSet.getInt(OrdersFields.ORDER_STATUSES_USER_ID);
+                User user = userMap.get(userID);
+                int orderID = resultSet.getInt(OrdersFields.ORDER_STATUSES_ORDER_ID);
+                int statusID = resultSet.getInt(OrdersFields.ORDER_STATUSES_STATUS_ID);
+                Date statusDate = new Date(resultSet.getDate(GoodsFields.GOOD_DATE_WHEN_ADDED).getTime());
+                user.setStatus(orderID, statusMap.get(statusID), statusDate);
+            }
+        } catch (SQLException e) {
+            System.out.println(thisName + LogMessages.SQL_ERROR + e.getErrorCode() + " | " + e.getSQLState());
+        } finally {
+            if (resultSet != null) {
+                resultSet.close();
+            }
+            if (statement != null) {
+                statement.close();
+            }
+        }
+        System.out.println(thisName + LogMessages.END_PROCEDURE);
+    }
+
+    private void setOrdersGoods(Connection connection, DBGoods dbGoods) throws SQLException {
+        String thisName = "setOrdersGoods";
+        System.out.println(thisName + LogMessages.START_PROCEDURE);
+        String sql = "SELECT * FROM " + OrdersFields.ORDER_LIST_TABLE;
+        System.out.println(thisName + LogMessages.SQL_CODE);
+        Statement statement = null;
+        ResultSet resultSet = null;
+        try {
+            statement = connection.createStatement();
+            resultSet = statement.executeQuery(sql);
+            System.out.println(thisName + LogMessages.SQL_EXECUTE);
+            while (resultSet.next()) {
+                int userID = resultSet.getInt(OrdersFields.ORDER_LIST_USER_ID);
+                User user = userMap.get(userID);
+                int orderID = resultSet.getInt(OrdersFields.ORDER_LIST_ORDER_ID);
+                int goodID = resultSet.getInt(OrdersFields.ORDER_LIST_GOOD_ID);
+                int quantity = resultSet.getInt(OrdersFields.ORDER_LIST_QUANTITY);
+                user.addGoodToList(orderID, dbGoods.getGoodByID(goodID), quantity);
+            }
+        } catch (SQLException e) {
+            System.out.println(thisName + LogMessages.SQL_ERROR + e.getErrorCode() + " | " + e.getSQLState());
+        } finally {
+            if (resultSet != null) {
+                resultSet.close();
+            }
+            if (statement != null) {
+                statement.close();
+            }
+        }
+        System.out.println(thisName + LogMessages.END_PROCEDURE);
+    }
+
+    private void setUserBlocking(Connection connection) throws SQLException {
+        String thisName = "setUserBlocking";
+        System.out.println(thisName + LogMessages.START_PROCEDURE);
+        String sql = "SELECT * FROM " + UsersFields.USERS_BLOCKING_TABLE;
+        System.out.println(thisName + LogMessages.SQL_CODE);
+        Statement statement = null;
+        ResultSet resultSet = null;
+        try {
+            statement = connection.createStatement();
+            resultSet = statement.executeQuery(sql);
+            System.out.println(thisName + LogMessages.SQL_EXECUTE);
+            while (resultSet.next()) {
+                int userID = resultSet.getInt(UsersFields.USERS_BLOCKING_USER_ID);
+                User user = userMap.get(userID);
+                user.setBlockingReason(blockingReasonMap.get(resultSet.getInt(UsersFields.USERS_BLOCKING_REASON)),
+                        new java.util.Date(resultSet.getDate(UsersFields.USERS_BLOCKING_DATE).getTime()));
+            }
+        } catch (SQLException e) {
+            System.out.println(thisName + LogMessages.SQL_ERROR + e.getErrorCode() + " | " + e.getSQLState());
+        } finally {
+            if (resultSet != null) {
+                resultSet.close();
+            }
+            if (statement != null) {
+                statement.close();
+            }
+        }
+        System.out.println(thisName + LogMessages.END_PROCEDURE);
+    }
+
+    Reason getReasonByID(int id) {
+        return blockingReasonMap.get(id);
+    }
+
+    Type getRoleByID(int id) {
+        return roleMap.get(id);
+    }
+
+    Map<Integer, Type> getAllRoles() {
+        return roleMap;
+    }
+
+    User checkUser(String login, String password) {
+        String thisName = "checkUser";
+        User user = new User(0, login, password);
+        System.out.println(thisName + " user exists?");
+        boolean isUser = userMap.containsValue(user);
+        if (isUser) {
+            int userId =
+                    userMap.entrySet().stream().filter(entry -> user.equals(entry.getValue())).map(Map.Entry::getKey).findFirst().get();
+            System.out.println(thisName + " user_id: " + userId);
+            if (userMap.get(userId).getPassword().equals(password)) {
+                return userMap.get(userId);
+            }
+        }
+        System.out.println(thisName + " user doesn't exist.");
+        return null;
+    }
+
+    User findUserByID(int id) {return userMap.get(id);}
+
+    List<User> getAllUsers() {return new ArrayList<>(userMap.values());}
+
+    boolean updateUser(int id, User user, Connection connection) throws SQLException {
+        String thisName = "updateUser";
+        System.out.println(thisName + LogMessages.START_PROCEDURE);
+        PreparedStatement preparedStatement = null;
+        try {
+            System.out.println(thisName + LogMessages.START_TRANSACTION);
+            connection.setAutoCommit(false);
+            int iso_l = connection.getTransactionIsolation();
+            connection.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
+            String sql = "UPDATE user " +
+                    //       1        2    3   4    5       6          7        8        9
+                    "SET pwd=?, email=?, F=?, I=?, O=?, role=?, stdcur=?, stdln=?, blocked=? " + "WHERE ID=?"; //10
+            System.out.println(thisName + LogMessages.SQL_CODE + sql);
+            preparedStatement = connection.prepareStatement(sql);
+            preparedStatement.setString(1, user.getPassword());
+            preparedStatement.setString(2, user.getEmail());
+            preparedStatement.setString(3, user.getFamilyName());
+            preparedStatement.setString(4, user.getName());
+            preparedStatement.setString(5, user.getFatherName());
+            preparedStatement.setInt(6, user.getRole().getID());
+            preparedStatement.setInt(7, user.getStandardCurrency().getID());
+            preparedStatement.setInt(8, user.getStandardLanguage().getID());
+            preparedStatement.setInt(9, user.getLastBlockingReason().getReasonID());
+            preparedStatement.setInt(10, id);
+            preparedStatement.executeUpdate();
+            System.out.println(thisName + LogMessages.SQL_EXECUTE);
+            if (user.getIsBlocked()) {
+                sql = "INSERT INTO user_blocking (u_id, reason, dt) VALUES (?,?,SYSDATE())";
+                System.out.println(thisName + LogMessages.SQL_CODE + sql);
+                PreparedStatement sta2 = connection.prepareStatement(sql);
+                sta2.setInt(1, id);
+                sta2.setInt(2, user.getLastBlockingReason().getReasonID());
+                sta2.executeUpdate();
+                System.out.println(thisName + LogMessages.SQL_EXECUTE);
+            }
+            connection.commit();
+            connection.setAutoCommit(false);
+            connection.setTransactionIsolation(iso_l);
+            return true;
+        } catch (SQLException _e) {
+            System.out.println(thisName + LogMessages.SQL_ERROR + _e.getErrorCode() + " | " + _e.getSQLState());
+            connection.rollback();
+        } finally {
+            if (preparedStatement != null) {
+                preparedStatement.close();
+            }
+        }
+        return false;
+    }
+
+    void refreshUser(int id, User user) {
+        User userL = findUserByID(id);
+        userL.setPassword(user.getPassword());
+        userL.setEmail(user.getEmail());
+        userL.setFIO(user.getFamilyName(), user.getName(), user.getFatherName());
+        userL.setRole(user.getRole());
+        userL.setStandardCurrency(user.getStandardCurrency());
+        userL.setStandardLanguage(user.getStandardLanguage());
+        userL.setBlockingReasons(user.getIsBlocked(), user.getWhyBlocked());
+    }
+
+    public Status getStatus(int statusID) {
+        return statusMap.get(statusID);
+    }
+}
+
+public class DBManager {
+    public static DBManager inst;
+    private final DataSource ds;
+    private DBGeneral dbGeneral;
+    private DBGoods dbGoods;
+    private DBUsers dbUsers;
+
+    public static synchronized DBManager getInstance() {
+        if (inst == null) {
             try {
-                Class.forName("com.mysql.cj.jdbc.Driver");
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
+                inst = new DBManager();
+            } catch (NamingException | SQLException e) {
+                System.out.println("getInstance " + LogMessages.ERROR_MESSAGE + e.getMessage());
             }
-            System.out.println("getInstance 1");
-            inst=new DBManager();
-            System.out.println("getInstance 2");
-            Properties prop=new Properties();
-            System.out.println("getInstance 3");
-            System.out.println(new File(".").getAbsolutePath());
-            prop.load(Files.newInputStream(Paths.get(SETTINGS_FILE)));
-            System.out.println("getInstance 4");
-            String url=prop.getProperty("connection.url");
-            System.out.println("getInstance 5");
-            conn=DriverManager.getConnection(url);
-            System.out.println("getInstance 6");
-            String sql = "USE efinal;";
-            try
-            {
-                Statement sta=conn.createStatement();
-                System.out.println("getInstance 7");
-                boolean rs=sta.execute(sql);
-                if (rs) {System.out.println("getInstance true");}
-                else {System.out.println("getInstance false");}
-                System.out.println("getInstance 8");
-            }
-            catch (SQLException _e) {System.out.println("error "+_e.getSQLState());}
-            System.out.println("getInstance 9");
-            inst.refreshAll();
-            System.out.println("getInstance 10");
         }
         return inst;
     }
-    public Map<Integer,ChoosableParameterValue> getAllCategories(){return categories;}
-    public Map<Integer,ChoosableParameterValue> getAllColors(){return colors;}
-    public Map<Integer,ChoosableParameterValue> getAllBrands(){return brands;}
-    public Map<Integer, Parameter> getAllParameters(){return params;}
-    public Map<Integer,Parameter> getAllGoodsParams(List<Good> _goods){return null;}
-    public void refreshAll()
-    {
-        inst.refreshCategoriesValues();
-        inst.refreshBrandsValues();
-        inst.refreshColorsValues();
-        inst.refreshParameters();
 
-        inst.refreshRegionalSetting();
-        inst.refreshUsersValues();
+    private DBManager() throws NamingException, SQLException {
+        String thisName = "DBManager";
+        System.out.println(thisName + LogMessages.START_PROCEDURE);
+        Context initContext = new InitialContext();
+        System.out.println(thisName + " Initialize context");
+        Context envContext = (Context) initContext.lookup("java:/comp/env");
+        System.out.println(thisName + " Lookup for env");
+        ds = (DataSource) envContext.lookup("jdbc/dataSource");
+        System.out.println(thisName + " Lookup for dataSource " + ds);
+        System.out.println(thisName + " Initialize general");
+        dbGeneral = new DBGeneral();
+        dbGeneral.initializeDBGeneral(ds.getConnection());
+        System.out.println(thisName + " Initialize goods");
+        dbGoods = new DBGoods();
+        dbGoods.initializeDBGoods(ds.getConnection());
+        System.out.println(thisName + " Initialize users");
+        dbUsers = new DBUsers();
+        dbUsers.initializeDBUsers(ds.getConnection(), dbGeneral, dbGoods);
+        System.out.println(thisName + " All was initialized");
+        System.out.println(thisName + LogMessages.END_PROCEDURE);
     }
-    private  <T extends ChoosableParameterValue> void refreshChoosableParameterValues (Class<T> type, String _tName, String _fID, String _fValue)
-    {
-        System.out.println("get"+_tName+" 1");
-        Map<Integer,ChoosableParameterValue> params_l=null;
-        if (type==Category.class){categories=new TreeMap<>(); params_l=categories;}
-        else if (type==Color.class){colors=new TreeMap<>();params_l=colors;}
-        else if (type==Brand.class){brands=new TreeMap<>();params_l=brands;}
-        System.out.println("get"+_tName+" 2");
-        String sql = "SELECT * FROM "+_tName;
-        System.out.println("get"+_tName+" 3. SQL: "+sql);
-        System.out.println("get"+_tName+" 4");
-        try (Statement sta=conn.createStatement();ResultSet rs=sta.executeQuery(sql))
-        {
-            while (rs.next())
-            {
-                ChoosableParameterValue param_l = type.getDeclaredConstructor().newInstance();   // OK
-                assert param_l!=null;
-                param_l.setParameter(rs.getInt(_fID), rs.getString(_fValue));
-                params_l.put(rs.getInt(_fID),param_l);
-            }
-        }
-        catch (SQLException _e) {System.out.println("get"+_tName+" error "+_e.getSQLState()+" "+_e.getErrorCode());}
-        catch (InvocationTargetException _e){System.out.println("get"+_tName+" error "+_e.getMessage());}
-        catch (InstantiationException _e){System.out.println("get"+_tName+" error "+_e.getLocalizedMessage());}
-        catch (IllegalAccessException _e){System.out.println("get"+_tName+" error "+_e.getMessage());}
-        catch (NoSuchMethodException _e){System.out.println("get"+_tName+" error "+_e.getMessage());}
-        System.out.println("get"+_tName+" 5");
-    }
-    public void refreshCategoriesValues (){
-        refreshChoosableParameterValues(Category.class, GoodsFields.CATEGORY_TABLE,
-                                        GoodsFields.CATEGORY_ID,
-                                        GoodsFields.CATEGORY_NAME);
-                                    }
-    public void refreshColorsValues (){
-        refreshChoosableParameterValues(Color.class, GoodsFields.COLOR_TABLE,
-                                        GoodsFields.COLOR_ID,
-                                        GoodsFields.COLOR_NAME);
-                                }
-    public void refreshBrandsValues (){
-        refreshChoosableParameterValues(Brand.class, GoodsFields.BRAND_TABLE,
-                                        GoodsFields.BRAND_ID,
-                                        GoodsFields.BRAND_NAME);
-                                }
-    public void refreshParameters()
-    {
-        System.out.println("refreshParameters 1");
-        params=new TreeMap<>();
-        String sql = "SELECT * FROM "+GoodsFields.PARAMETER_TYPE_TABLE;
-        System.out.println("refreshParameters 2. SQL: "+sql);
-        try (Statement sta=conn.createStatement();ResultSet rs=sta.executeQuery(sql))
-        {
-            while (rs.next())
-            {
-                System.out.println("refreshParameters 2.1 "+rs.getInt(GoodsFields.PARAMETER_TYPE_ID)+rs.getString(GoodsFields.PARAMETER_TYPE_NAME));
-                Parameter parameter_l=new Parameter();
-                System.out.println("refreshParameters 2.2");
-                parameter_l.setParameter(rs.getInt(GoodsFields.PARAMETER_TYPE_ID), rs.getString(GoodsFields.PARAMETER_TYPE_NAME));
-                System.out.println("refreshParameters 2.3");
-                params.put(rs.getInt(GoodsFields.PARAMETER_TYPE_ID),parameter_l);
-                System.out.println("refreshParameters 2.4");
-            }
-        }
-        catch (SQLException _e) {System.out.println("refreshParameters error "+_e.getSQLState()+" "+_e.getErrorCode());}
-        System.out.println("refreshParameters 3");
-    }
-    public List<Good> getGoods()
-    {
-        System.out.println("getGoods 1");
-        String sql = "SELECT * FROM "+GoodsFields.GOODS_TABLE + " WHERE "+GoodsFields.GOOD_ALREADY_SOLD + " = ?";
-        System.out.println("getGoods 2 SQL: "+sql);
-        PreparedStatement sta = null;
-        System.out.println("getGoods 3");
-        ResultSet rs=null;
-        System.out.println("getGoods 4");
-        List<Good> res=new ArrayList<>();
-        System.out.println("getGoods 5");
-        try
-        {
-            System.out.println("getGoods 5.1");
-            sta=conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-            System.out.println("getGoods 5.2");
-            sta.setString(1, "0");
-            System.out.println("getGoods 5.3");
-            rs=sta.executeQuery();
-            System.out.println("getGoods 5.4");
-            while (rs.next())
-            {
-                int entity_id=rs.getInt(GoodsFields.GOOD_ID);
-                Good entity_l=new Good(entity_id,rs.getString(GoodsFields.GOOD_NAME));
-                entity_l.setDescription(rs.getString(GoodsFields.GOOD_DESCRIPTION));
-                entity_l.setPrice(rs.getFloat(GoodsFields.GOOD_PRICE));
-                //Забираем параметры по конкретному товару
-                entity_l.setParams(getGoodParameters(entity_id));
-                //Забираем параметры по конкретному товару
-                entity_l.setCategories(getGoodCategories(entity_id));
-                res.add(entity_l);
-            }
-        }
-        catch (SQLException _e){System.out.println("error "+_e.getErrorCode());}
-        finally
-        {
-            try {assert rs!=null;rs.close();} catch (Exception e) { /* ignored */ }
-            try {sta.close();} catch (Exception e) { /* ignored */ }
-        }
-        System.out.println("getGoods 6");
-        return res;
-    }
-    public List<Good> getGoods(int _parameter, int _value)
-    {
-        System.out.println("getGoods 1");
-        String sql = "SELECT t2.* FROM "+GoodsFields.PARAMETER_TABLE+" t1 join "+GoodsFields.GOODS_TABLE+" t2 " +
-                     "on t1."+GoodsFields.PARAMETER_ID+"=t2."+GoodsFields.GOOD_ID+
-                     " WHERE t1."+GoodsFields.PARAMETER_TYPE+"=? and t1."+GoodsFields.PARAMETER_VALUE+"=? and " +
-                     "t2."+GoodsFields.GOOD_ALREADY_SOLD+"=?";
-        System.out.println("getGoods 2 SQL: "+sql);
-        PreparedStatement sta = null;
-        System.out.println("getGoods 3");
-        ResultSet rs=null;
-        System.out.println("getGoods 4");
-        List<Good> res=new ArrayList<>();
-        System.out.println("getGoods 5");
-        try
-        {
-            System.out.println("getGoods 5.1");
-            sta=conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-            System.out.println("getGoods 5.2");
-            sta.setString(1, String.valueOf(_parameter));
-            sta.setString(2, String.valueOf(_value));
-            sta.setString(3, "0");
-            System.out.println("getGoods 5.3");
-            rs=sta.executeQuery();
-            System.out.println("getGoods 5.4");
-            while (rs.next())
-            {
-                int entity_id=rs.getInt(GoodsFields.GOOD_ID);
-                Good entity_l=new Good(entity_id,rs.getString(GoodsFields.GOOD_NAME));
-                entity_l.setDescription(rs.getString(GoodsFields.GOOD_DESCRIPTION));
-                entity_l.setPrice(rs.getFloat(GoodsFields.GOOD_PRICE));
-                //Забираем параметры по конкретному товару
-                entity_l.setParams(getGoodParameters(entity_id));
-                //Забираем параметры по конкретному товару
-                entity_l.setCategories(getGoodCategories(entity_id));
-                res.add(entity_l);
-            }
-        }
-        catch (SQLException _e){System.out.println("error "+_e.getErrorCode());}
-        finally
-        {
-            try {assert rs!=null;rs.close();} catch (Exception e) { /* ignored */ }
-            try {sta.close();} catch (Exception e) { /* ignored */ }
-        }
-        System.out.println("getGoods 6");
-        return res;
-    }
-    private List<Category> getGoodCategories (int _goodID)
-    {
-        System.out.println("getGood#"+_goodID+"Category 1");
-        String sql="SELECT type, value FROM goods_params WHERE good_id=? and type=5";
-        System.out.println("getGood#"+_goodID+"Category 2 SQL: "+sql);
-        PreparedStatement sta=null;
-        System.out.println("getGood#"+_goodID+"Category 3");
-        ResultSet rs=null;
-        System.out.println("getGood#"+_goodID+"Category 4");
-        List<Category> categoryList_l=new ArrayList<>();
-        System.out.println("getGood#"+_goodID+"Category 5");
-        try
-        {
-            System.out.println("getGood#"+_goodID+"Category 5.1");
-            sta=conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-            System.out.println("getGood#"+_goodID+"Category 5.2");
-            sta.setString(1, String.valueOf(_goodID));
-            System.out.println("getGood#"+_goodID+"Category 5.3");
-            rs=sta.executeQuery();
-            System.out.println("getGood#"+_goodID+"Category 5.4");
-            while (rs.next())
-            {
-                //Забираем категории товара
-                int entity_id=rs.getInt(GoodsFields.PARAMETER_VALUE);
-                categoryList_l.add((Category) categories.get(entity_id));
-            }
-        }
-        catch (SQLException _e){System.out.println("error "+_e.getErrorCode());}
-        finally
-        {
-            try {assert rs!=null;rs.close();} catch (Exception e) { /* ignored */ }
-            try {sta.close();} catch (Exception e) { /* ignored */ }
-        }
-        System.out.println("getGood#"+_goodID+"Category 6");
-        return categoryList_l;
-    }
-    private Map<Integer, GoodParameter> getGoodParameters (int _goodID)
-    {
-        System.out.println("getGood#"+_goodID+"Params 1");
-        //Выбираем все параметры кроме категории. Категорию добавляем отдельно.
-        String sql = "SELECT t1.type, t2.name, t1.value," +
-                            "case WHEN(t2.from_table=\"\" or t2.from_table is null) then 0 ELSE 1 END as from_table" +
-                     " FROM goods_params t1 JOIN params_types t2 on t1.type=t2.id" +
-                     " WHERE good_id=? and type<>5";
-        System.out.println("getGood#"+_goodID+"Params 2. SQL: "+sql);
-        PreparedStatement sta = null;
-        System.out.println("getGood#"+_goodID+"Params 3");
-        ResultSet rs=null;
-        System.out.println("getGood#"+_goodID+"Params 4");
-        Map<Integer,GoodParameter> res=new TreeMap<>();
-        System.out.println("getGood#"+_goodID+"Params 5");
-        try
-        {
-            System.out.println("getGood#"+_goodID+"Params 5.1");
-            sta=conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-            System.out.println("getGood#"+_goodID+"Params 5.2");
-            sta.setInt(1, _goodID);
-            System.out.println("getGood#"+_goodID+"Params 5.3");
-            rs=sta.executeQuery();
-            System.out.println("getGood#"+_goodID+"Params 5.4");
-            while (rs.next())
-            {
-                //Забираем параметры товара
-                GoodParameter parameter_l=null;
-                int entity_id=rs.getInt(GoodsFields.PARAMETER_TYPE);
-                boolean param_type=rs.getBoolean(GoodsFields.PARAMETER_TYPE_OUTER);
-                if (param_type)
-                {
-                    parameter_l=new GoodChoosableParameter();
-                    setChoosableParameter(parameter_l,params.get(entity_id),rs.getInt(GoodsFields.PARAMETER_VALUE));
-                }
-                else
-                {
-                    parameter_l=new GoodNonChoosableParameter();
-                    setNonChoosableParameter(parameter_l,params.get(entity_id),rs.getDouble(GoodsFields.PARAMETER_VALUE));
-                }
-                res.put(entity_id,parameter_l);
-            }
-        }
-        catch (SQLException _e){System.out.println("error "+_e.getErrorCode());}
-        finally
-        {
-            try {assert rs!=null;rs.close();} catch (Exception e) { /* ignored */ }
-            try {sta.close();} catch (Exception e) { /* ignored */ }
-        }
-        System.out.println("getGood#"+_goodID+"Params 6");
-        return res;
-    }
-    private void setNonChoosableParameter(GoodParameter _goodParameter,Parameter _parameter,double _value)
-    {
-        _goodParameter.setParameter(_parameter,_value);
-    }
-    private void setChoosableParameter(GoodParameter _goodParameter,Parameter _parameter,int _value)
-    {
-        switch (_value){
-            case 4:
-                //Это бренд
-                _goodParameter.setParameter(_parameter,brands.get(_value));
-            break;
-            case 6:
-                //Это цвет
-                _goodParameter.setParameter(_parameter,colors.get(_value));
-            break;
-        }
 
+    public Connection getConnection() throws SQLException {return ds.getConnection();}
+
+    public List<Language> getLanguages() {
+        return dbGeneral.getLanguages();
     }
-    private void refreshUserRolesValues()
-    {
-        System.out.println("get UserRoles 1");
-        roles=new TreeMap<>();
-        System.out.println("get UserRoles 2");
-        String sql = "SELECT * FROM "+UsersFields.ROLES_TABLE;
-        System.out.println("get UserRoles 3. SQL: "+sql);
-        System.out.println("get UserRoles 4");
-        try (Statement sta=conn.createStatement();ResultSet rs=sta.executeQuery(sql))
-        {
-            while (rs.next())
-            {
-                int id_l=rs.getInt(UsersFields.ROLES_ID);
-                Type role_l = new Type(id_l,rs.getString(UsersFields.ROLES_NAME));
-                roles.put(id_l,role_l);
-            }
-        }
-        catch (SQLException _e) {System.out.println("get UserRoles  error "+_e.getSQLState()+" "+_e.getErrorCode());}
-        System.out.println("get UserRoles  5 "+roles.size());
-        System.out.println("get UserURLs 1");
-        sql = "SELECT * FROM "+UsersFields.SECURE_URLS_TABLE;
-        System.out.println("get UserURLs 3. SQL: "+sql);
-        System.out.println("get UserURLs 4");
-        try (Statement sta=conn.createStatement();ResultSet rs=sta.executeQuery(sql))
-        {
-            while (rs.next())
-            {
-                int role_id=rs.getInt(UsersFields.SECURE_URLS_ROLE_ID);
-                Type role_l = roles.get(role_id);
-                role_l.addURL(rs.getString(UsersFields.SECURE_URLS_URL));
-                System.out.println("get UserURLs 4.1 "+rs.getString(UsersFields.SECURE_URLS_URL));
-            }
-        }
-        catch (SQLException _e) {System.out.println("get UserRoles  error "+_e.getSQLState()+" "+_e.getErrorCode());}
-        System.out.println("get UserURLs 5 "+roles.size());
+
+    public Language getLanguageByID(int _id) {return dbGeneral.getLanguageByID(_id);}
+
+    public List<Currency> getCurrencies() {return dbGeneral.getCurrencies();}
+
+    public Currency getCurrencyByID(int _id) {return dbGeneral.getCurrencyByID(_id);}
+
+    public Good getGoodByID(int _id) {return dbGoods.getGoodByID(_id);}
+
+    public List<ChoosableParameterValue> getAllCategories() {return dbGoods.getAllCategories();}
+
+    public List<ChoosableParameterValue> getAllColors() {return dbGoods.getAllColors();}
+
+    public List<ChoosableParameterValue> getAllBrands() {
+        return dbGoods.getAllBrands();
     }
-    private void refreshBlockingReasonsValues()
-    {
-        System.out.println("get BlockingReasons 1");
-        blocking_reasons=new TreeMap<>();
-        System.out.println("get BlockingReasons 2");
-        String sql = "SELECT * FROM "+UsersFields.BLOCKED_TABLE+" WHERE ID<>0";
-        System.out.println("get BlockingReasons 3. SQL: "+sql);
-        System.out.println("get BlockingReasons 4");
-        try (Statement sta=conn.createStatement();ResultSet rs=sta.executeQuery(sql))
-        {
-            System.out.println("get BlockingReasons 4.1");
-            while (rs.next())
-            {
-                System.out.println("get BlockingReasons 4.2");
-                int id_l=rs.getInt(UsersFields.BLOCKED_REASON_ID);
-                System.out.println("get BlockingReasons 4.3");
-                Reason blocking_reason_l = new Reason(id_l, rs.getString(UsersFields.BLOCKED_REASON_NAME));
-                System.out.println("get BlockingReasons 4.4");
-                blocking_reasons.put(id_l,blocking_reason_l);
-                System.out.println("get BlockingReasons 4.5");
-            }
-        }
-        catch (SQLException _e) {System.out.println("get BlockingReasons  error "+_e.getSQLState()+" "+_e.getErrorCode());}
-        System.out.println("get BlockingReasons  5");
+
+    public List<Parameter> getAllParameters() {
+        return dbGoods.getAllParameters();
     }
-    public void refreshUsersValues()
-    {
-        refreshUserRolesValues();
-        refreshBlockingReasonsValues();
-        System.out.println("get Users 1");
-        users=new TreeMap<>();
-        System.out.println("get Users 2");
-        String sql = "SELECT * FROM "+UsersFields.USERS_TABLE;
-        System.out.println("get Users 3. SQL: "+sql);
-        System.out.println("get Users 4");
-        try (Statement sta=conn.createStatement();ResultSet rs=sta.executeQuery(sql))
-        {
-            System.out.println("get Users 4.1");
-            while (rs.next())
-            {
-                System.out.println("get Users 4.2");
-                int id_l=rs.getInt(UsersFields.USERS_ID);
-                System.out.println("get Users 4.3");
-                User user_l=new User(id_l,rs.getString(UsersFields.USERS_LOGIN),rs.getString(UsersFields.USERS_PASSWORD),
-                                     rs.getDate(UsersFields.USERS_REGISTRATION_DATE));
-                System.out.println("get Users 4.4");
-                Type role=roles.get(rs.getInt(UsersFields.USERS_ROLE));
-                System.out.println("get Users 4.5");
-                user_l.setRole(role);
-                Language language_l=languages.get(rs.getInt(UsersFields.USERS_STANDARD_LANGUAGE));
-                user_l.setStandardLanguage(language_l);
-                Currency currency_l=currencies.get(rs.getInt(UsersFields.USERS_STANDARD_CURRENCY));
-                user_l.setStandardCurrency(currency_l);
-                boolean is_blocked=rs.getBoolean(UsersFields.USERS_BLOCKED);
-                Reason reason_l=null;
-                if (is_blocked){reason_l=blocking_reasons.get(rs.getInt(UsersFields.USERS_BLOCKED));}
-                user_l.setBlockingReason(is_blocked,reason_l);
-                users.put(id_l,user_l);
-                System.out.println("get Users 4.7");
-            }
-        }
-        catch (SQLException _e) {System.out.println("get Users  error "+_e.getSQLState()+" "+_e.getErrorCode());}
-        System.out.println("get Users  5");
+
+    public List<Good> getGoods() {
+        return dbGoods.getAllGoods();
     }
-    // Find a User by userName and password.
-    public User findUser(String _login, String _password)
-    {
-        System.out.println("findUser 1");
-        User user_l=new User(0,_login,_password);
-        System.out.println("findUser 2 "+_login+" "+_password);
-        boolean is_user=users.containsValue(user_l);
-        System.out.println("findUser 3 "+is_user);
-        int user_id=users.entrySet().stream().filter(entry -> user_l.equals(entry.getValue())).map(Map.Entry::getKey).findFirst().get();
-        System.out.println("findUser 4 user_id "+user_id);
-        if (is_user && users.get(user_id).getPassword().equals(_password)){return users.get(user_id);}
-        System.out.println("findUser 5");
-        return null;
+
+    public List<Good> getGoods(int _parameter, int _value) {
+        return dbGoods.getGoodByCategory(_value);
     }
-    public Map<Integer,Type> getRoles(){System.out.println(roles.size());return roles;}
-    public Map<Integer, User> getUsers(){return users;}
-    public void refreshRegionalSetting()
-    {
-        languages=new TreeMap<>();
-        currencies=new TreeMap<>();
-        String sql = "SELECT * FROM "+GoodsFields.CURRENCY_TABLE;
-        System.out.println("get  3. SQL: "+sql);
-        try (Statement sta=conn.createStatement();ResultSet rs=sta.executeQuery(sql))
-        {
-            while (rs.next())
-            {
-                int id_l=rs.getInt(GoodsFields.CURRENCY_ID);
-                Currency currency_l = new Currency(id_l,rs.getString(GoodsFields.CURRENCY_NAME),rs.getString(GoodsFields.CURRENCY_ABBR));
-                currencies.put(id_l,currency_l);
-            }
-        }
-        catch (SQLException _e) {System.out.println("get   error "+_e.getSQLState()+" "+_e.getErrorCode());}
-        sql = "SELECT * FROM "+GoodsFields.LANGUAGE_TABLE;
-        System.out.println("get  3. SQL: "+sql);
-        try (Statement sta=conn.createStatement();ResultSet rs=sta.executeQuery(sql))
-        {
-            while (rs.next())
-            {
-                int id_l=rs.getInt(GoodsFields.LANGUAGE_ID);
-                Language language_l = new Language(id_l,rs.getString(GoodsFields.LANGUAGE_NAME),rs.getString(GoodsFields.LANGUAGE_ABBR));
-                languages.put(id_l,language_l);
-            }
-        }
-        catch (SQLException _e) {System.out.println("get   error "+_e.getSQLState()+" "+_e.getErrorCode());}
+
+    public Reason getReasonByID(int _id) {
+        return dbUsers.getReasonByID(_id);
     }
-    public List<Language> getLanguages (){return new ArrayList<>(languages.values());}
-    public List<Currency> getCurrencies (){return new ArrayList<>(currencies.values());}
-    public Good getGoodByID(int _id)
-    {
-        System.out.println("getGood 1");
-        String sql = "SELECT * FROM "+GoodsFields.GOODS_TABLE + " WHERE "+GoodsFields.GOOD_ID + " = ?";
-        System.out.println("getGood 2 SQL: "+sql);
-        PreparedStatement sta = null;
-        System.out.println("getGood 3");
-        ResultSet rs=null;
-        System.out.println("getGood 4");
-        Good res=null;
-        System.out.println("getGood 5");
-        try
-        {
-            System.out.println("getGood 5.1");
-            sta=conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-            System.out.println("getGood 5.2");
-            sta.setString(1, String.valueOf(_id));
-            System.out.println("getGood 5.3");
-            rs=sta.executeQuery();
-            System.out.println("getGood 5.4");
-            if (rs.next())
-            {
-                res=new Good(_id,rs.getString(GoodsFields.GOOD_NAME));
-                res.setDescription(rs.getString(GoodsFields.GOOD_DESCRIPTION));
-                res.setPrice(rs.getFloat(GoodsFields.GOOD_PRICE));
-                //Забираем параметры по конкретному товару
-                res.setParams(getGoodParameters(_id));
-                //Забираем параметры по конкретному товару
-                res.setCategories(getGoodCategories(_id));
-            }
+
+    public Type getRoleByID(int _id) {
+        return dbUsers.getRoleByID(_id);
+    }
+
+    public Map<Integer, Type> getRoles() {
+        return dbUsers.getAllRoles();
+    }
+
+    public User findUser(String _login, String _password) {return dbUsers.checkUser(_login, _password);}
+
+    public User findUser(int _id) {
+        return dbUsers.findUserByID(_id);
+    }
+
+    public List<User> getUsers() {
+        return dbUsers.getAllUsers();
+    }
+
+    public boolean updateUser(int _id, User _user) throws SQLException {
+        boolean result = dbUsers.updateUser(_id, _user, ds.getConnection());
+        if (result) {
+            dbUsers.refreshUser(_id, _user);
         }
-        catch (SQLException _e){System.out.println("error "+_e.getErrorCode());}
-        finally
-        {
-            try {assert rs!=null;rs.close();} catch (Exception e) { /* ignored */ }
-            try {sta.close();} catch (Exception e) { /* ignored */ }
-        }
-        System.out.println("getGoods 6");
-        return res;
+        return result;
+    }
+
+    public List<Orders> getOrders() {return null;}
+
+    public Good findGood(int _id) {return dbGoods.getGoodByID(_id);}
+
+    public boolean storeGoodToCart(User loginedUser, Good good, int quantity) throws SQLException {
+        return dbGoods.insertNewGoodToList(ds.getConnection(), loginedUser.getId(), 2, good.getID(), quantity);
+    }
+
+    public boolean removeGoodFromCart(User loginedUser, int orderId, Good good) throws SQLException {
+        return dbGoods.deleteGoodFromList(ds.getConnection(), loginedUser.getId(), 2, good.getID());
+    }
+
+    public boolean updateGoodInCart(User loginedUser, Good good, int newQuantity) throws SQLException {
+        return dbGoods.updateGoodInList(ds.getConnection(), loginedUser.getId(), 2, good.getID(), newQuantity);
+    }
+
+    public boolean orderFromCart(User loginedUser, Orders cart, int newOrderID, Date date) throws SQLException {
+        return dbGoods.updateGoodsInList(ds.getConnection(), loginedUser.getId(), 2, newOrderID, date);
+    }
+
+    public boolean insertGoodsToList(User loginedUser, int orderId, List<Order> orderList) throws SQLException {
+        return dbGoods.insertNewGoodToList(ds.getConnection(), loginedUser.getId(), 2, orderList);
+    }
+
+    public boolean insertGoodToList(User loginedUser, int orderId, Good good) throws SQLException {
+        return dbGoods.insertNewGoodToList(ds.getConnection(), loginedUser.getId(), 1, good.getID(), 1);
+    }
+
+    public Status getStatus(int statusID) {
+        return dbUsers.getStatus(statusID);
     }
 }
