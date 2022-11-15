@@ -1,6 +1,7 @@
 package net.yammyy.servlet;
 
 import net.yammyy.units.order.Order;
+import net.yammyy.units.order.OrderStatus;
 import net.yammyy.units.order.Orders;
 import net.yammyy.units.users.User;
 import net.yammyy.utils.*;
@@ -50,20 +51,27 @@ public class OrdersServlet extends HttpServlet {
         User loginedUser = AppUtils.getLoginedUser(request.getSession());
         List<Orders> orders = loginedUser.getOrdersList();
         writer.println("<div class=\"container\">");
-        if (request.getParameterMap().isEmpty() || ((!request.getParameter(HTMLLinks.PARAMETER_ORDER_ID).equals("1")) &&
-                (!request.getParameter(HTMLLinks.PARAMETER_ORDER_ID).equals("2")))) {
+        if (request.getParameterMap().isEmpty()) {
             for (int i = 0; i < orders.size(); i++) {
                 if ((orders.get(i).getID() != 1) && (orders.get(i).getID() != 2)) {
                     writer.println("<div class=row>");
-                    writer.println("<div class=col-1>");
+                    writer.println("<div class=col-1><a href=" + request.getContextPath() + HTMLLinks.USER_ORDERS +
+                            "?" + HTMLLinks.PARAMETER_ORDER_ID + "=" + orders.get(i).getID() + ">");
                     writer.println(orders.get(i).getID());
-                    writer.println("</div>");
-                    writer.println("<div class=col-11>");
+                    writer.println("</a></div>");
+                    writer.println("<div class=col-5>");
                     List<Order> orderList = orders.get(i).getOrder();
                     for (int j = 0; j < orderList.size(); j++) {
                         writer.println(orderList.get(j).getGood().getName() + " ");
                         writer.println(orderList.get(j).getQuantity() + "<br>");
                     }
+                    writer.println("</div>");
+                    writer.println("<div class=col-6>");
+                    String status;
+                    if (orders.get(i).getLastStatus()==null){status="";}
+                    else {status=orders.get(i).getLastStatus().getName();}
+                    writer.println(status + " ");
+                    //writer.println(orders.get(i).getLastStatus().toString() + " ");
                     writer.println("</div>");
                     writer.println("</div>");
                 }
@@ -72,7 +80,7 @@ public class OrdersServlet extends HttpServlet {
             List<Order> favorite = loginedUser.getFavorites();
             for (int i = 0; i < favorite.size(); i++) {
                 writer.println("<div class=row>" +
-                        "<div class=col-4><a href=" + request.getContextPath()+HTMLLinks.ONE_GOOD_LINK + "?" + HTMLLinks.PARAMETER_GOOD_ID +
+                        "<div class=col-4><a href=" + request.getContextPath() + HTMLLinks.ONE_GOOD_LINK + "?" + HTMLLinks.PARAMETER_GOOD_ID +
                         "=" + favorite.get(i).getGood().getID() + ">");
                 writer.println(favorite.get(i).getGood().getName());
                 writer.println("</a></div>");
@@ -82,12 +90,55 @@ public class OrdersServlet extends HttpServlet {
                 writer.println("<div class=col-4>");
                 writer.println(favorite.get(i).getGood().getPrice());
                 writer.println("</div>");
-                writer.println("<div class=col-4>");
-                writer.println(favorite.get(i).getQuantity());
+                writer.println("</div>");
+            }
+        } else if (!(request.getParameter(HTMLLinks.PARAMETER_ORDER_ID).equals("2"))) {
+            int orderId= Integer.parseInt(request.getParameter(HTMLLinks.PARAMETER_ORDER_ID));
+            Orders orderList = loginedUser.getGoodsInList(orderId);
+            List<Order> goods=orderList.getOrder();
+            List<OrderStatus> status=orderList.getAllStatuses();
+            double priceSum=0;
+            for (int i = 0; i < goods.size(); i++) {
+                writer.println("<div class=row>" +
+                        "<div class=col-4>");
+                writer.println(goods.get(i).getGood().getName());
+                writer.println("</div>");
+                writer.println("<div class=col-5>");
+                writer.println(goods.get(i).getGood().getDescription());
+                writer.println("</div>");
+                writer.println("<div class=col-1>");
+                writer.println(goods.get(i).getGood().getPrice());
+                writer.println("</div>");
+                writer.println("<div class=col-1>");
+                writer.println(goods.get(i).getQuantity());
+                writer.println("</div>");
+                writer.println("<div class=col-1>");
+                double price = goods.get(i).getQuantity() * goods.get(i).getGood().getPrice();
+                priceSum+=price;
+                writer.println(price);
                 writer.println("</div>");
                 writer.println("</div>");
             }
-
+            writer.println("<div class=row>" +
+                    "<div class=col-11>");
+            writer.println("</div>");
+            writer.println("<div class=col-1>");
+            writer.println(priceSum);
+            writer.println("</div>");
+            writer.println("</div><br><br>");
+            System.out.println(status.size());
+            for (int i = 0; i < status.size(); i++) {
+                writer.println("<div class=row>" +
+                        "<div class=col-4>");
+                writer.println(status.get(i).getDateChange());
+                writer.println("</div>");
+                writer.println("<div class=col-4>");
+                writer.println(status.get(i).getName());
+                writer.println("</div>");
+                writer.println("<div class=col-4>");
+                writer.println("</div>");
+                writer.println("</div>");
+            }
         }
         writer.println("</div>");
         writer.println("</div>" +//col

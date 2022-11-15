@@ -43,7 +43,13 @@ public class OneGoodServlet extends HttpServlet {
         System.out.println(thisName + " " + thisLogLine + " Формируем основной контент");
         writer_l.println("<div id=\"mainContent\" class=\"container\">" +
                 "<div class=\"row\">");
-        writer_l.println("<div class=\"col-2 main-container\"></div>" +
+        writer_l.println("<div class=\"col-2 main-container\">"+
+                "<a href=\""+_request.getContextPath()+HTMLLinks.HOME_PAGE_LINK);
+        if (!_request.getParameter(HTMLLinks.PARAMETER_CATEGORY_ID).equals("null")){
+            writer_l.println("?"+HTMLLinks.PARAMETER_CATEGORY_ID+"="+_request.getParameter(HTMLLinks.PARAMETER_CATEGORY_ID));
+        }
+        writer_l.println("\">Назад</i></a>"+
+                "</div>" +
                 "<div class=\"col-10\">");
         FormingGoods.formOneGoodView(_request, _response);
         writer_l.println("</div>" +//col

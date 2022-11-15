@@ -804,7 +804,7 @@ class DBUsers {
                 User user = userMap.get(userID);
                 int orderID = resultSet.getInt(OrdersFields.ORDER_STATUSES_ORDER_ID);
                 int statusID = resultSet.getInt(OrdersFields.ORDER_STATUSES_STATUS_ID);
-                Date statusDate = new Date(resultSet.getDate(GoodsFields.GOOD_DATE_WHEN_ADDED).getTime());
+                Date statusDate = new Date(resultSet.getDate(OrdersFields.ORDER_STATUSES_DATE_GET).getTime());
                 user.setStatus(orderID, statusMap.get(statusID), statusDate);
             }
         } catch (SQLException e) {

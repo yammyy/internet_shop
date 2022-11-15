@@ -51,9 +51,12 @@ public class LoginServlet extends HttpServlet {
                 return;
             }
             AppUtils.storeLoginedUser(request.getSession(), userAccount);
-            List<Order> orderList= AppUtils.getGoodFromSessionCart(request.getSession());
-            boolean result=dbManager.insertGoodsToList(userAccount,2,orderList);
-            if (result){userAccount.addGoodsToList(2,orderList);request.getSession().removeAttribute(HTMLLinks.PARAMETER_SESSION_CART);}
+            List<Order> orderList = AppUtils.getGoodFromSessionCart(request.getSession());
+            boolean result = dbManager.insertGoodsToList(userAccount, 2, orderList);
+            if (result) {
+                userAccount.addGoodsToList(2, orderList);
+                request.getSession().removeAttribute(HTMLLinks.PARAMETER_SESSION_CART);
+            }
             int redirectID = -1;
             try {
                 redirectID = Integer.parseInt(request.getParameter(HTMLLinks.PARAMETER_REDIRECT_ID));
@@ -62,8 +65,7 @@ public class LoginServlet extends HttpServlet {
             String requestUri = AppUtils.getRedirectAfterLoginUrl(request.getSession(), redirectID);
             if (requestUri != null) {
                 response.sendRedirect(requestUri);
-            }
-            else {
+            } else {
                 response.sendRedirect(request.getContextPath() + HTMLLinks.HOME_PAGE_LINK);
             }
         } catch (ServletException | IOException | SQLException _e) {

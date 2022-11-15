@@ -92,7 +92,8 @@ public class FormingGoods {
                         "\">" +
                         "<input type=\"hidden\" name=\"" + HTMLLinks.PARAMETER_GOOD_ID + "\" value=\"" + allGoods_l.get(i).getID() + "\">" +
                         "<img src=\"\" />" +
-                        "<a href=\"" + _request.getContextPath() + HTMLLinks.ONE_GOOD_LINK + "?good_id=" + allGoods_l.get(i).getID() + "\">" +
+                        "<a href=\"" + _request.getContextPath() + HTMLLinks.ONE_GOOD_LINK + "?good_id=" + allGoods_l.get(i).getID() +"&"+
+                        HTMLLinks.PARAMETER_CATEGORY_ID+"="+_request.getParameter(HTMLLinks.PARAMETER_CATEGORY_ID)+ "\">" +
                         allGoods_l.get(i).getName() +
                         "</a>" +
                         allGoods_l.get(i).getDescription() +
@@ -103,6 +104,7 @@ public class FormingGoods {
 
                 User loginedUser = AppUtils.getLoginedUser(_request.getSession(false));
                 if (loginedUser != null) {
+                    //if (allGoods_l.get(i).)
                     writer_l.println("<button name=\"addToFavoriteButton\" class=\"good_for_cart\" type=\"submit\" value=" +
                             " \"fav\" ><i class=\"fa-sharp fa-solid fa-star\"></i></button>");
                 }

@@ -48,6 +48,10 @@
     <servlet-name>AddOrderServlet</servlet-name>
     <servlet-class>net.yammyy.servlet.AddOrderServlet</servlet-class>
   </servlet>
+  <servlet>
+    <servlet-name>AdminAllOrdersServlet</servlet-name>
+    <servlet-class>net.yammyy.servlet.AdminAllOrdersServlet</servlet-class>
+  </servlet>
 
   <servlet-mapping>
     <servlet-name>StatusCodeDemo</servlet-name>
@@ -97,5 +101,9 @@
     <servlet-name>AddOrderServlet</servlet-name>
     <url-pattern>/neworder</url-pattern>
   </servlet-mapping>
+<servlet-mapping>
+  <servlet-name>AdminAllOrdersServlet</servlet-name>
+  <url-pattern>/adminorder</url-pattern>
+</servlet-mapping>
 
 </web-app>

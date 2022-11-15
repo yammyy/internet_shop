@@ -21,6 +21,7 @@ public class Orders {
     public List<Order> getOrder() {return new ArrayList<>(goodsList.values());}
 
     public OrderStatus getLastStatus() {
+        if (statuses.size()==0) {return null;}
         int maxStatus = 0;
         for (int i = 0; i < statuses.size(); i++) {
             int statID = statuses.get(i).getID();
